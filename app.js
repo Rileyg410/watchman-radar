@@ -139,10 +139,43 @@ function drawScope() {
 }
 
 // ---------------------------------------------------------------- map
-const map = L.map('map', {zoomControl: true, worldCopyJump: true, attributionControl: true, minZoom: 2}).setView([38, -30], 3);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  subdomains: 'abcd', maxZoom: 12, attribution: '&copy; OpenStreetMap &copy; CARTO | ADS-B: adsb.lol'
-}).addTo(map);
+const map = L.map('map', {zoomControl: true, worldCopyJump: true, attributionControl: true, minZoom: 2, maxZoom: 19}).setView([38, -30], 3);
+// Base maps: free Esri tiles, no API key needed. Terrain is the default, like Google's terrain view.
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+const esri = (path, o) => L.tileLayer(ESRI + path + '/MapServer/tile/{z}/{y}/{x}', Object.assign({maxZoom: 19, crossOrigin: true}, o));
+const ADSB = ' | ADS-B: adsb.lol';
+const BASEMAPS = {
+  terrain: {n: 'TERRAIN', layers: [
+    esri('World_Topo_Map', {maxNativeZoom: 18, attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS, &copy; OpenStreetMap contributors' + ADSB})]},
+  satellite: {n: 'SATELLITE', layers: [
+    esri('World_Imagery', {maxNativeZoom: 19, attribution: 'Imagery &copy; Esri &mdash; Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN, GIS User Community' + ADSB}),
+    esri('Reference/World_Transportation', {maxNativeZoom: 19, opacity: .85}),
+    esri('Reference/World_Boundaries_and_Places', {maxNativeZoom: 19})]},
+  dark: {n: 'DARK', layers: [
+    esri('Canvas/World_Dark_Gray_Base', {maxNativeZoom: 16, attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors' + ADSB}),
+    esri('Canvas/World_Dark_Gray_Reference', {maxNativeZoom: 16})]},
+};
+let baseKey = localStorage.getItem('wr_basemap');
+if (!BASEMAPS[baseKey]) baseKey = 'terrain';
+function setBasemap(k) {
+  if (!BASEMAPS[k]) k = 'terrain';
+  for (const b of Object.values(BASEMAPS)) b.layers.forEach(l => map.removeLayer(l));
+  BASEMAPS[k].layers.forEach(l => l.addTo(map));
+  baseKey = k; localStorage.setItem('wr_basemap', k);
+  const el = document.getElementById('map');
+  el.classList.remove('bm-terrain', 'bm-satellite', 'bm-dark'); el.classList.add('bm-' + k);
+  document.querySelectorAll('.bmswitch button').forEach(b => b.classList.toggle('on', b.dataset.bm === k));
+}
+const BmSwitch = L.Control.extend({options: {position: 'topright'}, onAdd() {
+  const d = L.DomUtil.create('div', 'bmswitch');
+  d.innerHTML = Object.entries(BASEMAPS).map(([k, v]) => `<button type="button" data-bm="${k}">${v.n}</button>`).join('');
+  L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+  d.querySelectorAll('button').forEach(b => b.onclick = () => setBasemap(b.dataset.bm));
+  return d;
+}});
+new BmSwitch().addTo(map);
+setBasemap(baseKey);
+window.wrMap = map;
 const regionLayer = L.layerGroup().addTo(map), acLayer = L.layerGroup().addTo(map), alertLayer = L.layerGroup().addTo(map);
 for (const [k, v] of Object.entries(REGIONS)) {
   L.rectangle(v[1], {color: '#39ff8f', weight: 1, opacity: .35, dashArray: '4 6', fill: true, fillOpacity: .02, interactive: false}).addTo(regionLayer);
@@ -150,7 +183,7 @@ for (const [k, v] of Object.entries(REGIONS)) {
 L.circleMarker(HOME, {radius: 5, color: '#39ff8f', fillColor: '#39ff8f', fillOpacity: 1}).bindPopup('<b>HOME BASE</b>').addTo(map);
 function planeSvg(col, big) {
   const s = big ? 26 : 18;
-  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="color:${col}"><path fill="${col}" d="M12 2c.6 0 1 .5 1 1.2V9l8 4.6v2l-8-2.3v4.9l2.4 1.7V21L12 20l-3.4 1v-1.1L11 18.2v-4.9L3 15.6v-2L11 9V3.2C11 2.5 11.4 2 12 2z"/></svg>`;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="color:${col}"><path fill="${col}" stroke="#000" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="M12 2c.6 0 1 .5 1 1.2V9l8 4.6v2l-8-2.3v4.9l2.4 1.7V21L12 20l-3.4 1v-1.1L11 18.2v-4.9L3 15.6v-2L11 9V3.2C11 2.5 11.4 2 12 2z"/></svg>`;
 }
 function drawPlanes() {
   acLayer.clearLayers();

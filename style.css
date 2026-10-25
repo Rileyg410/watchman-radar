@@ -61,7 +61,13 @@ h1 span{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.4)}
 /* map */
 #map{flex:1;min-height:0;background:#000}
 .leaflet-container{background:#01060a;font-family:var(--mono)}
-.leaflet-tile-pane{filter:hue-rotate(95deg) saturate(1.6) brightness(.95) contrast(1.1)}
+.bm-dark .leaflet-tile-pane{filter:brightness(.6) sepia(1) hue-rotate(95deg) saturate(2.2) contrast(1.25)}
+.bm-terrain.leaflet-container{background:#dfe6d8} .bm-satellite.leaflet-container{background:#0b1a10}
+.bmswitch{display:flex;border:1px solid var(--g2);box-shadow:0 0 10px rgba(57,255,143,.35);background:#04140c}
+.bmswitch button{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--g);background:#04140c;border:0;border-left:1px solid var(--line2);padding:7px 9px;cursor:pointer}
+.bmswitch button:first-child{border-left:0}
+.bmswitch button.on{background:var(--g);color:#001a0c;font-weight:700}
+.bm-terrain .leaflet-interactive[stroke="#39ff8f"],.bm-satellite .leaflet-interactive[stroke="#39ff8f"]{stroke:#00a651;stroke-opacity:.7}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#04140c;color:var(--txt);border:1px solid var(--g2);border-radius:0;box-shadow:0 0 18px rgba(57,255,143,.3)}
 .leaflet-popup-content{font-family:var(--mono);font-size:12px;margin:10px 12px;line-height:1.5}
 .leaflet-popup-content b{color:var(--g)}
@@ -69,7 +75,8 @@ h1 span{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.4)}
 .leaflet-control-attribution a{color:#4f8f6d!important}
 .leaflet-bar a{background:#04140c;color:var(--g);border-color:var(--line2)}
 .ac{transition:transform .3s}
-.ac svg{filter:drop-shadow(0 0 3px currentColor)}
+.ac svg{filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 3px currentColor)}
+.bm-terrain .ac svg,.bm-satellite .ac svg{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 1px 2px rgba(0,0,0,.8))}
 .ac.foreign svg{animation:blink .8s steps(2) infinite}
 .ping{border-radius:50%;border:2px solid;animation:ping 2s ease-out infinite}
 @keyframes ping{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.6);opacity:0}}

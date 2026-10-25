@@ -21,6 +21,9 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import intel  # noqa: E402  round-two Intel brain
 from email.utils import parsedate_to_datetime
 
 try:
@@ -59,6 +62,7 @@ DEFAULT_CONFIG = {
         "foreign_mil": True, "subs": True, "russia": True, "hormuz": True,
         "nuclear": True, "missiles": True, "warships": True, "buildups": True,
         "ukraine": True, "breaking": True,
+        "skyking": True, "gpsjam": True, "closures": True, "convergence": True,
     },
     "regions": {
         "alaska": True, "europe": True, "ukraine": True, "baltic": True,
@@ -70,6 +74,8 @@ DEFAULT_CONFIG = {
     "sensitivity": "normal",
     "paused": False,
     "recap": {"enabled": True, "time": "21:00"},
+    "morning": {"enabled": True, "time": "07:00"},
+    "sunday": {"enabled": True, "time": "20:00"},
 }
 
 
@@ -342,9 +348,26 @@ def aircraft_alerts(planes, cfg, state):
                 lat=p["lat"], lon=p["lon"], count=len(group)))
 
     # Doomsday plane / TACAMO
+    nwst = state.setdefault("intel", {}).setdefault("nw", {})
     for p in planes:
-        if p["cat"] == "c2" and region_ok(p["rg"]):
-            e4 = p["t"] in ("E4", "E4B")
+        e4 = p["t"] in ("E4", "E4B")
+        if e4 and w.get("nuclear", True) and isinstance(p.get("alt"), (int, float)) and p["alt"] > 1000:
+            # NIGHTWATCH upgrade: always watched (any region), breaks through Quiet Hours, Joel 2:1
+            first = nwst.setdefault(p["hex"], {"lat": p["lat"], "lon": p["lon"], "ts": NOW_TS})
+            where = f"{REGION_LABEL[p['rg']]} ({p['lat']:.1f}, {p['lon']:.1f})" if p.get("rg") else f"({p['lat']:.1f}, {p['lon']:.1f})"
+            hdg = p.get("trk")
+            alerts.append(dict(
+                tier="IMMEDIATE", key=f"nightwatch:{p['hex']}", cooldown=12 * 3600, watch="nightwatch",
+                what="NIGHTWATCH IS AIRBORNE", breaks_quiet=True,
+                headline="\U0001F534 The E-4B 'doomsday plane' is in the air.",
+                location=where + (f", heading {round(hdg)}\u00B0" if isinstance(hdg, (int, float)) else ""),
+                assets=fmt_assets([p]) + alt_txt(p) + f". First seen up at ({first['lat']:.1f}, {first['lon']:.1f})",
+                response="The flying Pentagon. Usually training or carrying the Defense Secretary. Watch for other nuclear-force signals.",
+                source="adsb.lol live ADS-B (military feed)", threat="HIGH", region=p.get("rg"),
+                lat=p["lat"], lon=p["lon"], hex=p["hex"], cs=p.get("cs"), type=p["t"], alt=p.get("alt"),
+                gs=p.get("gs"), trk=p.get("trk")))
+            continue
+        if p["cat"] == "c2" and region_ok(p["rg"]) and not e4:
             alerts.append(dict(
                 tier="IMMEDIATE" if e4 else "ROUTINE", key=f"c2:{p['t']}:{p['rg']}",
                 cooldown=12 * 3600, watch="nuclear",
@@ -711,8 +734,18 @@ def make_body(a):
         f"\U0001F6E1\uFE0F RESPONSE: {a['response']}",
         f"\U0001F4E1 SOURCE: {a['source']}",
         f"\u26A0\uFE0F THREAT LEVEL: {a['threat']}",
-        "\u2014 WATCHTOWER",
     ]
+    try:
+        if a.get("cs") or a.get("type"):
+            ml = intel.decode_line({"cs": a.get("cs"), "t": a.get("type")})
+            if ml:
+                lines.insert(-3, f"\U0001F3AF MISSION: {ml}")
+        if a.get("watch") not in ("test",):
+            ref, txt = intel.verse_for(a)
+            lines.append(f"\U0001F4D6 {ref}: {txt}")
+    except Exception:
+        pass
+    lines.append("\u2014 WATCHTOWER")
     return "\n".join(lines)
 
 
@@ -765,7 +798,10 @@ def push_actions(a):
         if track_url(a):
             acts.append({"action": "view", "label": "Track it", "url": track_url(a)})
         acts.append({"action": "view", "label": "Pray", "url": screen_url(a, "/pray")})
-    acts.append({"action": "view", "label": "Open Radar", "url": SITE_URL})
+    elif a.get("watch") not in ("test",):
+        acts.append({"action": "view", "label": "Pray", "url": screen_url(a, "/pray")})
+    if not a.get("link") or len(acts) < 2:
+        acts.append({"action": "view", "label": "Open Radar", "url": SITE_URL})
     if a.get("link") and len(acts) < 3:
         acts.append({"action": "view", "label": "Read story", "url": a["link"]})
     return acts[:3]
@@ -788,6 +824,68 @@ def push(a, title, body):
                                  headers={"Content-Type": "application/json", "User-Agent": UA}, method="POST")
     with urllib.request.urlopen(req, timeout=15) as r:
         return "sent" if r.status == 200 else f"http {r.status}"
+
+
+# ----------------------------------------------------------------- morning + Sunday reports
+def report_minutes(cfg, key, default):
+    try:
+        h, m = map(int, str(cfg.get(key, {}).get("time", default)).split(":"))
+        return max(0, min(23 * 60 + 59, h * 60 + m))
+    except Exception:
+        h, m = map(int, default.split(":"))
+        return h * 60 + m
+
+
+def push_report(r, cfg, tag):
+    if cfg.get("paused"):
+        return "held: pushes paused"
+    if not TOPIC:
+        return "no topic"
+    payload = {"topic": TOPIC, "title": r["title"], "message": r["body"], "priority": 3, "tags": [tag]}
+    if SITE_URL:
+        payload["click"] = SITE_URL + "#intel"
+        payload["actions"] = [{"action": "view", "label": "Open Intel", "url": SITE_URL + "#intel"},
+                              {"action": "view", "label": "Open Radar", "url": SITE_URL}]
+    if DRY_RUN:
+        print("DRY REPORT:", json.dumps(payload, ensure_ascii=False)[:900])
+        return "dry"
+    try:
+        req = urllib.request.Request(NTFY + "/", data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json", "User-Agent": UA}, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return "sent" if resp.status == 200 else f"http {resp.status}"
+    except Exception as e:
+        return f"failed: {type(e).__name__}"
+
+
+def run_reports(state, cfg, log, intel_data):
+    """7 AM morning report and Sunday 8 PM weekly report (Central). Returns log entries."""
+    now_ct = NOW.astimezone(CENTRAL)
+    today = now_ct.strftime("%Y-%m-%d")
+    mins = now_ct.hour * 60 + now_ct.minute
+    st = state.setdefault("intel", {})
+    reps = st.setdefault("reports", {})
+    out = []
+    force = os.environ.get("REPORT_TEST", "")
+    jobs = [("morning", "07:00", "sunny", lambda: intel.morning_report(state, log, intel_data or {}, NOW_TS, CENTRAL), True),
+            ("sunday", "20:00", "bar_chart", lambda: intel.sunday_report(state, log, NOW_TS, CENTRAL, REGION_LABEL), now_ct.weekday() == 6)]
+    for key, dflt, tag, build, day_ok in jobs:
+        start = report_minutes(cfg, key, dflt)
+        due = cfg.get(key, {}).get("enabled", True) and day_ok and start <= mins < start + 180 and st.get(key + "_sent") != today
+        if not (due or force == key):
+            continue
+        r = build()
+        r["pushed"] = push_report(r, cfg, tag)
+        if not force:
+            st[key + "_sent"] = today
+        reps[key] = r
+        out.append({"id": key + today.replace("-", "") + ("t" + str(NOW_TS) if force else ""), "ts": NOW_TS,
+                    "tier": "ROUTINE", "watch": "report" if key == "morning" else "sunday",
+                    "what": ("MORNING REPORT" if key == "morning" else "SUNDAY REPORT") + (" (TEST)" if force else ""),
+                    "title": r["title"], "body": r["body"], "location": "All theaters",
+                    "pushed": r["pushed"] if r["pushed"] in ("sent", "dry") else None,
+                    "held": None if r["pushed"] in ("sent", "dry") else r["pushed"]})
+    return out
 
 
 # ----------------------------------------------------------------- end-of-day recap
@@ -1127,6 +1225,14 @@ def main():
     if planes:
         candidates += aircraft_alerts(planes, cfg, state)
     candidates += news_alerts(items, cfg, state, first_run)
+    intel_data = None
+    try:  # round two Intel brain: must never break the regular alerts
+        extra, intel_data = intel.run(state, cfg, planes, candidates, NOW_TS, CENTRAL, sources)
+        if first_run:
+            extra = [x for x in extra if not x["key"].startswith(("convergence:", "dejavu:"))]
+        candidates += extra
+    except Exception as e:
+        print("intel error:", type(e).__name__, e)
 
     last = state.setdefault("last_alert", {})
     new_alerts = []
@@ -1159,10 +1265,10 @@ def main():
         if a.get("sq") and "route" not in a:
             a["route"] = lookup_route(a)
         want = cfg["push"].get(a["tier"], False) and not cfg.get("paused")
-        if quiet and not (a["tier"] == "FLASH" and cfg["quiet"].get("flash_breaks", True)):
+        if quiet and not ((a["tier"] == "FLASH" and cfg["quiet"].get("flash_breaks", True)) or a.get("breaks_quiet")):
             want = False
             a["held"] = "quiet hours"
-        if a["tier"] != "FLASH" and state["push_count"] >= 25:
+        if a["tier"] != "FLASH" and not a.get("breaks_quiet") and state["push_count"] >= 25:
             want = False
             a["held"] = "daily cap"
         if want and pushes_left > 0:
@@ -1200,6 +1306,20 @@ def main():
     except Exception as e:  # the recap must never break the regular alerts
         print("recap error:", type(e).__name__, e)
         recap_entries = []
+    try:
+        intel.count_alerts(state, new_alerts, NOW_TS, CENTRAL)
+    except Exception as e:
+        print("tally error:", type(e).__name__, e)
+    try:
+        recap_entries += run_reports(state, cfg, log, intel_data)
+    except Exception as e:  # the reports must never break the regular alerts
+        print("report error:", type(e).__name__, e)
+    if intel_data is not None:
+        try:
+            intel_data["reports"] = state.get("intel", {}).get("reports", {})
+            save_json("intel.json", intel_data)
+        except Exception as e:
+            print("intel save error:", type(e).__name__, e)
     log["alerts"] = ([{k: a[k] for k in keep if a.get(k) is not None} for a in recap_entries] +
                      [{k: a[k] for k in keep if k in a} for a in new_alerts] + log.get("alerts", []))[:400]
     save_json("alerts.json", log)

@@ -35,6 +35,8 @@ const WATCHES = [
   ['tankers', 'Lots of refueling planes'], ['airlift', 'Lots of cargo planes'], ['buildups', 'Troop buildups'],
   ['ukraine', 'Big pushes in Ukraine'], ['russia', 'Russia on the move'], ['hormuz', 'Persian Gulf trouble'],
   ['isr', 'Spy planes'], ['breaking', 'Major breaking news'],
+  ['skyking', 'Skyking & EAM bursts on HFGCS'], ['gpsjam', 'GPS jamming spikes'], ['closures', 'New sky closures (FAA)'],
+  ['convergence', 'Convergence alarm (signals stacking)'],
 ];
 const REGIONS = {
   alaska: ['Alaska', [[51, -180], [72, -129]]],
@@ -56,6 +58,8 @@ const DEFAULTS = {
   sensitivity: 'normal',
   paused: false,
   recap: {enabled: true, time: '21:00'},
+  morning: {enabled: true, time: '07:00'},
+  sunday: {enabled: true, time: '20:00'},
 };
 const ICON = {FLASH: '\u{1F7E5}', IMMEDIATE: '\u{1F7E7}', ROUTINE: '\u{1F7E6}'};
 
@@ -204,13 +208,14 @@ function drawPlanes() {
     const over = REGIONS[p.rg] ? REGIONS[p.rg][0] : 'open water';
     const mk = L.marker([p.lat, p.lon], {icon});
     if (p.hex) markerByHex.set(String(p.hex), mk);
-    mk.bindPopup(
+    mk.bindPopup(() =>
       `<div class="pp"><b>${esc(nm)}</b><div class="pk">${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}</div>` +
       (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
       (sq ? `<div class="pf">${sq}</div>` : '') +
       `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +
       `<div class="pm">Over ${esc(over)} \u00B7 ${esc(fromHome(p.lat, p.lon))}</div>` +
       (ids.length ? `<details class="ids"><summary>Plane ID ${tipBtn('planeid')}</summary><div>${ids.map(esc).join(' &middot; ')}</div></details>` : '') +
+      (window.WR && WR.popupExtra ? WR.popupExtra(p) : '') +
       `<a href="https://globe.adsb.lol/?icao=${esc(String(p.hex).replace('~', ''))}" target="_blank" rel="noopener">Follow this plane live &rarr;</a></div>`
     , {maxWidth: 280}).addTo(acLayer);
   }
@@ -321,7 +326,7 @@ function drawFeed() {
     else if (a.link) links.push(`<a href="${esc(a.link)}" target="_blank" rel="noopener">\u2197 Read the news story</a>`);
     const isNew = !seenIds.has(a.id);
     let det = '';
-    if (a.watch === 'recap') det = `<pre class="tfpre">${esc(plainText(a.body || ''))}</pre>`;
+    if (a.watch === 'recap' || a.watch === 'report' || a.watch === 'sunday') det = `<pre class="tfpre">${esc(plainText(a.body || ''))}</pre>`;
     else {
       const pa = parseAssets(a.assets);
       const rows = [];
@@ -580,7 +585,7 @@ function trackPlane(hex, lat, lon, label) {
     map.flyTo([lat, lon], 7, {duration: 1}); setTimeout(() => trackPin && trackPin.openPopup(), 1100);
   }, 80);
 }
-const WR = window.WR = {hooks: [], DATA, getJSON, showTab, trackPlane, toast, ago,
+const WR = window.WR = {hooks: [], DATA, getJSON, showTab, trackPlane, toast, ago, map,
   get live() { return live; }, get alerts() { return alerts; }, get lastTab() { return lastTab; }};
 
 // ---------------------------------------------------------------- go

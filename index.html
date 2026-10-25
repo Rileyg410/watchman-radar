@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css?v=5">
 <link rel="stylesheet" href="squawk.css?v=6">
+<link rel="stylesheet" href="intel.css?v=1">
 </head>
 <body>
 <div class="scanlines"></div>
@@ -36,6 +37,7 @@
     <div class="threat" id="threatcon"><label>THREAT LEVEL <button class="i" data-tip="threat" aria-label="What is this?">i</button></label><b>----</b></div>
     <div class="sweep" id="sweepbox"><label>LAST CHECK <button class="i" data-tip="lastcheck" aria-label="What is this?">i</button></label><b id="sweepAge">--</b></div>
     <button class="cmdbtn sqbtn" id="openSq">&#9888; SQUAWKS</button>
+    <button class="cmdbtn ixbtnh" id="openIx">&#128737; INTEL</button>
     <button class="cmdbtn" id="openCmd">&#9881; COMMAND</button>
   </div>
 </header>
@@ -70,9 +72,15 @@
   <button data-go="map" class="on">&#9992;<span>MAP</span></button>
   <button data-go="feed">&#9888;<span>ALERTS</span><i id="feedBadge"></i></button>
   <button data-go="sq" class="sqtab"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 18v-5a5.5 5.5 0 0 1 11 0v5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21h16M12 2.5v2M4.6 5.6l1.4 1.4M19.4 5.6 18 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="14" r="1.8" fill="currentColor"/></svg><span>SQUAWK</span><i id="sqBadge"></i></button>
+  <button data-go="intel" class="ixtab"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>INTEL</span><i id="ixBadge"></i></button>
   <button data-go="cmd">&#9881;<span>COMMAND</span></button>
 </nav>
 
+<section class="ixs" id="ixs" aria-hidden="true" aria-label="Intel">
+  <header class="ixhd"><div><b>INTEL</b><span>WATCHTOWER // ROUND TWO</span></div><button id="closeIx" aria-label="Close">&#10005;</button></header>
+  <div class="ixbody" id="ixbody"></div>
+</section>
+<div class="ixnwscr" id="ixnw" role="alertdialog" aria-label="Nightwatch airborne"></div>
 <section class="sqs" id="sqs" aria-hidden="true" aria-label="Emergency squawks">
   <div class="sqbg" aria-hidden="true"><div class="sqring"><div class="sqsweep"></div></div></div>
   <div class="sqscroll" id="sqscroll">
@@ -140,6 +148,14 @@
       <div class="row times"><label>SEND AT <input type="time" data-k="recap.time"></label></div>
       <div class="hint">One alert a night, most notable find on top. Quiet days still get a short all-clear.</div>
     </div>
+    <div class="box">
+      <h3>REPORTS <small>(Central)</small></h3>
+      <div class="sw"><span>&#9728;&#65039; Morning report: what happened overnight</span><label class="tog"><input type="checkbox" data-k="morning.enabled"><i></i></label></div>
+      <div class="row times"><label>SEND AT <input type="time" data-k="morning.time"></label></div>
+      <div class="sw"><span>&#128202; Sunday report: this week vs last week</span><label class="tog"><input type="checkbox" data-k="sunday.enabled"><i></i></label></div>
+      <div class="row times"><label>SUNDAYS AT <input type="time" data-k="sunday.time"></label></div>
+      <div class="hint">Morning report ends with Psalm 121:4, Sunday report with Mark 13:37. Both also show on the INTEL screen.</div>
+    </div>
 
     <div class="box">
       <h3>HOW EASILY IT ALERTS <button class="i" data-tip="sens">i</button></h3>
@@ -179,7 +195,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="plain.js?v=5"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 <script src="squawk.js?v=6"></script>
+<script src="intel.js?v=1"></script>
 </body>
 </html>

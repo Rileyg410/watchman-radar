@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div class="scanlines"></div>
@@ -55,6 +55,8 @@
   </section>
 
   <section class="panel feedpanel" data-tab="feed">
+    <div class="ptitle">&#127942; TOP FINDS <span id="tfsub">// TODAY SO FAR</span></div>
+    <div class="topfinds" id="topfinds"><div class="tfempty">Tallying today&rsquo;s finds&hellip;</div></div>
     <div class="ptitle">WATCHTOWER FEED <span id="feedcount"></span></div>
     <div class="chips" id="tierchips"></div>
     <div class="feed" id="feed"><div class="empty">Waiting for first sweep&hellip;</div></div>
@@ -112,6 +114,13 @@
     </div>
 
     <div class="box">
+      <h3>END-OF-DAY RECAP <small>(Central)</small></h3>
+      <div class="sw"><span>&#127942; Push the day&rsquo;s top finds every night</span><label class="tog"><input type="checkbox" data-k="recap.enabled"><i></i></label></div>
+      <div class="row times"><label>SEND AT <input type="time" data-k="recap.time"></label></div>
+      <div class="hint">One push a day, most notable find on top. Quiet days still get a short all-clear.</div>
+    </div>
+
+    <div class="box">
       <h3>SURGE SENSITIVITY</h3>
       <div class="seg" id="sensSeg">
         <button data-v="low">LOW<small>only big moves</small></button>
@@ -147,6 +156,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

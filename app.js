@@ -55,6 +55,7 @@ const DEFAULTS = {
   quiet: {enabled: false, start: '22:00', end: '06:00', flash_breaks: true},
   sensitivity: 'normal',
   paused: false,
+  recap: {enabled: true, time: '21:00'},
 };
 const ICON = {FLASH: '\u{1F7E5}', IMMEDIATE: '\u{1F7E7}', ROUTINE: '\u{1F7E6}'};
 
@@ -63,7 +64,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&am
 const clone = o => JSON.parse(JSON.stringify(o));
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 3200); }
 
-let live = null, alerts = [], applied = null;
+let live = null, alerts = [], applied = null, recap = null, showLastRecap = false;
 let catOn = new Set(Object.keys(CATS));
 let tierOn = 'ALL';
 let settings = clone(DEFAULTS);
@@ -284,6 +285,42 @@ function drawFeed() {
   });
   badge();
 }
+// ---------------------------------------------------------------- top finds (end-of-day recap)
+const MEDAL = ['\u{1F947}', '\u{1F948}', '\u{1F949}', '4', '5'];
+function ctTime(ts, withDay) {
+  return new Date(ts * 1000).toLocaleString('en-US', Object.assign({timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit'}, withDay ? {weekday: 'short'} : {}));
+}
+function drawTopFinds() {
+  const box = $('#topfinds');
+  if (!recap || !recap.today) { box.innerHTML = '<div class="tfempty">The first tally shows up after the next sweep.</div>'; return; }
+  const t = recap.today, startCT = new Date(t.start * 1000).toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit'});
+  $('#tfsub').textContent = (startCT === '12:00 AM' ? '// TODAY SO FAR' : '// SINCE ' + ctTime(t.start, true).toUpperCase()) +
+    (recap.enabled ? ' \u00B7 RECAP ' + recap.recap_at : ' \u00B7 RECAP OFF');
+  const tiers = t.tiers || {};
+  let html = `<div class="tfstats"><span>${t.sweeps || 0} SWEEPS</span><span>PEAK ${t.peak_total || 0} MIL</span><span class="fl">${ICON.FLASH} ${tiers.FLASH || 0}</span><span class="im">${ICON.IMMEDIATE} ${tiers.IMMEDIATE || 0}</span><span class="ro">${ICON.ROUTINE} ${tiers.ROUTINE || 0}</span></div>`;
+  if (!t.top || !t.top.length) html += '<div class="tfempty">Nothing notable yet. All quiet on the watch so far.</div>';
+  else {
+    if (t.quiet) html += '<div class="tfnote">No FLASH or IMMEDIATE finds yet. Most notable on the log:</div>';
+    html += t.top.map((f, i) => {
+      const when = ctTime(f.first) + ((f.last - f.first) >= 1200 ? '\u2013' + ctTime(f.last) : '');
+      return `<div class="tf ${f.tier}" data-i="${i}"><b class="md">${MEDAL[i]}</b><div><h5>${esc(ICON[f.tier] + ' ' + f.what)}</h5>` +
+        `<div class="tfm">${esc(f.location || '')} \u00B7 ${esc(when)} CT${f.sweeps > 1 ? ' \u00B7 ' + f.sweeps + ' sweeps' : ''}${f.pushed ? ' \u00B7 <span class="p">\u25B2 PUSHED</span>' : ''}</div>` +
+        (f.headline ? `<div class="tfm hl">${esc(f.headline)}</div>` : (f.assets ? `<div class="tfm">${esc(f.assets)}</div>` : '')) + `</div></div>`;
+    }).join('');
+  }
+  if (t.airframes) html += `<div class="tfm af">\u2708\uFE0F ${esc(t.airframes)}</div>`;
+  if (recap.last && recap.last.body) {
+    html += `<button class="tflast" id="tfLast">${showLastRecap ? '\u25BE' : '\u25B8'} LAST RECAP \u00B7 ${esc(recap.last.date)}</button>` +
+      (showLastRecap ? `<pre class="tfpre">${esc(recap.last.title + '\n' + recap.last.body)}</pre>` : '');
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.tf').forEach(el => el.onclick = () => {
+    const f = t.top[+el.dataset.i];
+    if (f && f.lat != null) { showTab('map'); setTimeout(() => map.flyTo([f.lat, f.lon], 5, {duration: 1}), 80); }
+  });
+  const lb = $('#tfLast'); if (lb) lb.onclick = () => { showLastRecap = !showLastRecap; drawTopFinds(); };
+}
+
 function badge() {
   const n = alerts.filter(a => !seenIds.has(a.id) && a.tier !== 'ROUTINE').length;
   const b = $('#feedBadge'); b.textContent = n; b.classList.toggle('on', n > 0);
@@ -297,12 +334,13 @@ async function getJSON(name) {
 }
 async function refresh() {
   try {
-    const [l, a, c] = await Promise.all([getJSON('live.json'), getJSON('alerts.json').catch(() => ({alerts: []})), getJSON('config.json').catch(() => null)]);
+    const [l, a, c, rc] = await Promise.all([getJSON('live.json'), getJSON('alerts.json').catch(() => ({alerts: []})), getJSON('config.json').catch(() => null), getJSON('recap.json').catch(() => null)]);
+    recap = rc;
     const firstLoad = !live;
     live = l; alerts = (a.alerts || []).filter(x => x && x.tier);
     if (c && c.settings) { applied = c; if (!dirty && !pendingSince) loadSettings(c.settings); }
     if (firstLoad && !seenIds.size) { alerts.forEach(x => seenIds.add(x.id)); localStorage.setItem('wr_seen', JSON.stringify([...seenIds].slice(-500))); }
-    setBlips(); drawStats(); drawBoard(); drawPlanes(); drawAlertPings(); drawFeed(); threatcon(); tick();
+    setBlips(); drawStats(); drawBoard(); drawPlanes(); drawAlertPings(); drawFeed(); drawTopFinds(); threatcon(); tick();
     checkApplied();
   } catch (e) {
     $('#sysline').textContent = 'NO DATA YET - FIRST SWEEP PENDING';

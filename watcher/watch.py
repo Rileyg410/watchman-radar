@@ -34,6 +34,7 @@ TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
 NTFY = os.environ.get("NTFY_SERVER", "https://ntfy.sh").rstrip("/")
 DRY_RUN = os.environ.get("DRY_RUN", "") == "1"
 TEST_PUSH = os.environ.get("TEST_PUSH", "").lower() in ("1", "true", "yes")
+TEST_RECAP = os.environ.get("TEST_RECAP", "").lower() in ("1", "true", "yes")
 UA = "WatchmanRadar/1.0 (personal dashboard; github actions)"
 
 repo = os.environ.get("GITHUB_REPOSITORY", "")
@@ -68,6 +69,7 @@ DEFAULT_CONFIG = {
     "quiet": {"enabled": False, "start": "22:00", "end": "06:00", "flash_breaks": True},
     "sensitivity": "normal",
     "paused": False,
+    "recap": {"enabled": True, "time": "21:00"},
 }
 
 
@@ -745,6 +747,272 @@ def push(a, title, body):
         return "sent" if r.status == 200 else f"http {r.status}"
 
 
+# ----------------------------------------------------------------- end-of-day recap
+# WATCHTOWER keeps a running record of everything notable it sees between recaps
+# (one record per watch day, carried across sweeps in state.json). At the recap time
+# (default 9:00 PM Central) it ranks the day's finds and pushes one recap to the phone.
+RECAP_TOP = 5
+TIER_PTS = {"FLASH": 100, "IMMEDIATE": 60, "ROUTINE": 20}
+THREAT_PTS = {"SEVERE": 30, "HIGH": 20, "ELEVATED": 10, "LOW": 0, "NONE": 0}
+WATCH_PTS = {"nuclear": 15, "missiles": 12, "foreign_mil": 10, "bombers": 8, "warships": 8, "hormuz": 5}
+REGION_PTS = {"easternmed": 6, "gulf": 3}
+HV_TYPES = {"R135", "U2", "RQ4", "GLHK", "Q4", "E3TF", "E3CF", "E8", "E7WW", "E737", "E6", "E4", "E4B",
+            "A50", "IL20", "IL38"}
+MEDALS = ["\U0001F947", "\U0001F948", "\U0001F949", "4\uFE0F\u20E3", "5\uFE0F\u20E3"]
+FIND_KEEP = ("tier", "what", "headline", "location", "assets", "threat", "region", "lat", "lon", "link", "watch")
+
+
+def recap_minutes(cfg):
+    try:
+        h, m = map(int, str(cfg.get("recap", {}).get("time", "21:00")).split(":"))
+        return max(0, min(23 * 60 + 59, h * 60 + m))
+    except Exception:
+        return 21 * 60
+
+
+def recap_clock(cfg):
+    mins = recap_minutes(cfg)
+    return datetime(2000, 1, 1, mins // 60, mins % 60).strftime("%-I:%M %p") + " CT"
+
+
+def new_day(date_str, start_ts):
+    return {"date": date_str, "start": start_ts, "sweeps": 0, "peak_total": 0, "peak_cats": {},
+            "tiers": {"FLASH": 0, "IMMEDIATE": 0, "ROUTINE": 0}, "finds": {}, "airframes": {}}
+
+
+def find_score(f):
+    s = TIER_PTS.get(f["tier"], 0) + THREAT_PTS.get(f.get("threat"), 0)
+    s += WATCH_PTS.get(f.get("watch"), 0) + REGION_PTS.get(f.get("region"), 0)
+    s += min(f.get("peak") or 0, 12) * 2          # more aircraft / more reports = bigger
+    s += min(f.get("sweeps", 1), 18)              # stayed on the scope longer = bigger
+    if f.get("pushed"):
+        s += 3
+    return s
+
+
+def record_find(day, a, pushed=False, ts=None):
+    if a.get("watch") in ("test", "recap") or not a.get("key") and not a.get("what"):
+        return
+    key = a.get("key") or ("log:" + a["what"])
+    ts = ts or NOW_TS
+    n = a.get("count") or a.get("escalate_count") or len(a.get("more") or []) or 1
+    f = day["finds"].get(key)
+    if f is None:
+        f = {k: a[k] for k in FIND_KEEP if a.get(k) is not None}
+        f.update(first=ts, last=ts, sweeps=1, peak=n, pushed=bool(pushed))
+        day["finds"][key] = f
+        return
+    f["sweeps"] = f.get("sweeps", 1) + (1 if ts != f.get("last") else 0)
+    f["last"] = max(f.get("last", ts), ts)
+    f["pushed"] = f.get("pushed") or bool(pushed)
+    upgrade = TIER_RANK.get(a["tier"], 9) < TIER_RANK.get(f["tier"], 9)
+    if upgrade or n > (f.get("peak") or 0):
+        for k in FIND_KEEP:
+            if a.get(k) is not None:
+                f[k] = a[k]
+        if upgrade:
+            f["tier"] = a["tier"]
+        f["peak"] = max(n, f.get("peak") or 0)
+
+
+def record_sweep(day, planes, candidates, new_alerts):
+    day["sweeps"] += 1
+    if planes:
+        day["peak_total"] = max(day.get("peak_total", 0), len(planes))
+        cats = {}
+        for p in planes:
+            cats[p["cat"]] = cats.get(p["cat"], 0) + 1
+            notable = p["cat"] in ("bomber", "c2") or p["t"] in HV_TYPES or (p["nat"] in NATION_NAME and not at_home(p))
+            if notable and p.get("hex"):
+                af = day["airframes"].get(p["hex"])
+                if af is None and len(day["airframes"]) < 250:
+                    day["airframes"][p["hex"]] = {"t": p["t"], "cat": p["cat"], "nat": p["nat"], "cs": p["cs"],
+                                                  "rg": p["rg"], "first": NOW_TS, "last": NOW_TS}
+                elif af is not None:
+                    af["last"] = NOW_TS
+        pc = day.setdefault("peak_cats", {})
+        for c, n in cats.items():
+            pc[c] = max(pc.get(c, 0), n)
+    sent = {a["key"] for a in new_alerts if a.get("pushed") == "sent" and a.get("key")}
+    for a in new_alerts:
+        if a.get("watch") not in ("test", "recap") and a.get("tier") in day["tiers"]:
+            day["tiers"][a["tier"]] += 1
+    for a in candidates:
+        record_find(day, a, pushed=a.get("key") in sent)
+
+
+def ranked_finds(day):
+    fs = list(day.get("finds", {}).values())
+    for f in fs:
+        f["score"] = find_score(f)
+    fs.sort(key=lambda f: (-f["score"], -f.get("last", 0)))
+    return fs
+
+
+def airframe_line(day):
+    by = {}
+    for af in day.get("airframes", {}).values():
+        name = TYPE_NAMES.get(af["t"], af["t"] or "unknown")
+        if af.get("nat") in NATION_NAME:
+            name = NATION_NAME[af["nat"]] + " " + name
+        by[name] = by.get(name, 0) + 1
+    order = sorted(by.items(), key=lambda x: (-("RUSSIAN" in x[0] or "CHINESE" in x[0] or "IRANIAN" in x[0]), -x[1], x[0]))
+    return ", ".join(f"{n}x {nm}" for nm, n in order[:8]) + (f" +{len(order) - 8} more types" if len(order) > 8 else "")
+
+
+def recap_summary(day, cfg):
+    fs = ranked_finds(day)
+    big = [f for f in fs if f["tier"] in ("FLASH", "IMMEDIATE")]
+    top = (big if big else fs)[:RECAP_TOP if big else 3]
+    pc = day.get("peak_cats", {})
+    return {
+        "date": day["date"], "start": day.get("start"), "end": NOW_TS, "sweeps": day.get("sweeps", 0),
+        "peak_total": day.get("peak_total", 0), "peak_tankers": pc.get("tanker", 0), "peak_bombers": pc.get("bomber", 0),
+        "tiers": day.get("tiers", {}), "quiet": not big, "airframes": airframe_line(day),
+        "recap_at": recap_clock(cfg), "total_finds": len(fs),
+        "top": [{k: f[k] for k in ("tier", "what", "headline", "location", "assets", "threat", "region", "lat",
+                                     "lon", "link", "first", "last", "sweeps", "peak", "pushed", "score", "watch")
+                 if f.get(k) is not None} for f in top],
+    }
+
+
+def short_time(ts):
+    return datetime.fromtimestamp(ts, timezone.utc).astimezone(CENTRAL).strftime("%-I:%M %p")
+
+
+def day_time(ts):
+    return datetime.fromtimestamp(ts, timezone.utc).astimezone(CENTRAL).strftime("%a %-I:%M %p")
+
+
+def make_recap(s, late=False, test=False):
+    d = datetime.strptime(s["date"], "%Y-%m-%d").strftime("%a %b %-d").upper()
+    lead = "\U0001F9EA TEST " if test else ""
+    title = f"{lead}\U0001F3C6 TOP FINDS // {d}" if not s["quiet"] else f"{lead}\U0001F7E9 QUIET DAY // {d}"
+    t = s["tiers"]
+    lines = ["WATCHTOWER END-OF-DAY RECAP" + (" (late)" if late else "") + (" (TEST)" if test else ""),
+             f"\U0001F5D3\uFE0F WATCH: {day_time(s['start'])} \u2192 {day_time(s['end'])} CT",
+             f"\U0001F4E1 {s['sweeps']} sweeps \u00B7 peak {s['peak_total']} mil aircraft \u00B7 {s['peak_tankers']} tankers up at once",
+             f"{TIER_ICON['FLASH']} {t.get('FLASH', 0)} FLASH \u00B7 {TIER_ICON['IMMEDIATE']} {t.get('IMMEDIATE', 0)} IMMEDIATE \u00B7 {TIER_ICON['ROUTINE']} {t.get('ROUTINE', 0)} ROUTINE",
+             ""]
+    if s["quiet"]:
+        lines.append("No FLASH or IMMEDIATE finds today. The skies stayed within normal.")
+        lines.append("Most notable on the log:" if s["top"] else "Nothing worth logging. All quiet on the watch.")
+    else:
+        lines.append("MOST NOTABLE FIRST:")
+    for i, f in enumerate(s["top"]):
+        lines.append(f"{MEDALS[i]} {TIER_ICON[f['tier']]} {f['what'].upper()}")
+        if f.get("headline"):
+            hl = f["headline"]
+            lines.append("   \U0001F4F0 " + (hl if len(hl) <= 110 else hl[:107].rstrip() + "\u2026"))
+        when = short_time(f["first"]) + (f"\u2013{short_time(f['last'])}" if f.get("last", 0) - f["first"] >= 1200 else "")
+        lines.append(f"   \U0001F4CD {f.get('location', 'Unknown')} \u00B7 \U0001F550 {when} CT")
+        if f.get("assets") and f["assets"] != "See report":
+            a = f["assets"]
+            lines.append("   \U0001F6E9\uFE0F " + (a if len(a) <= 110 else a[:107].rstrip() + "\u2026"))
+        extra = [f"\u26A0\uFE0F {f.get('threat', 'LOW')}"]
+        if f.get("sweeps", 1) > 1:
+            extra.append(f"on scope {f['sweeps']} sweeps")
+        extra.append("\u25B2 pushed" if f.get("pushed") else "logged")
+        lines.append("   " + " \u00B7 ".join(extra))
+    if s["airframes"]:
+        lines += ["", "\u2708\uFE0F NOTABLE AIRFRAMES: " + s["airframes"]]
+    lines.append("\u2014 WATCHTOWER")
+    return title, "\n".join(lines)
+
+
+def push_recap(s, cfg, late=False, test=False):
+    title, body = make_recap(s, late, test)
+    s["title"], s["body"] = title, body
+    if cfg.get("paused") and not test:
+        s["pushed"] = "held: pushes paused"
+        return s
+    if not TOPIC:
+        s["pushed"] = "no topic"
+        return s
+    payload = {"topic": TOPIC, "title": title, "message": body,
+               "priority": 2 if in_quiet(cfg) else 3,
+               "tags": ["trophy"] if not s["quiet"] else ["green_circle"]}
+    if SITE_URL:
+        payload["click"] = SITE_URL
+        payload["actions"] = [{"action": "view", "label": "Open Radar", "url": SITE_URL}]
+    if DRY_RUN:
+        print("DRY RECAP:", json.dumps(payload, ensure_ascii=False))
+        s["pushed"] = "dry"
+        return s
+    try:
+        req = urllib.request.Request(NTFY + "/", data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json", "User-Agent": UA}, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as r:
+            s["pushed"] = "sent" if r.status == 200 else f"http {r.status}"
+    except Exception as e:
+        s["pushed"] = f"failed: {type(e).__name__}"
+    return s
+
+
+def recap_log_entry(s):
+    return {"id": "recap" + s["date"].replace("-", "") + ("t" + str(NOW_TS) if s.get("test") else ""),
+            "ts": NOW_TS, "tier": "ROUTINE", "watch": "recap",
+            "what": "END-OF-DAY RECAP" + (" (TEST)" if s.get("test") else ""), "title": s["title"], "body": s["body"],
+            "location": "All theaters", "pushed": s.get("pushed") if s.get("pushed") in ("sent", "dry") else None,
+            "held": None if s.get("pushed") in ("sent", "dry") else s.get("pushed")}
+
+
+def run_recap(state, cfg, planes, candidates, new_alerts, log):
+    """Track the watch day, and send the end-of-day recap when it is due. Returns log entries."""
+    now_ct = NOW.astimezone(CENTRAL)
+    today = now_ct.strftime("%Y-%m-%d")
+    mins_now = now_ct.hour * 60 + now_ct.minute
+    enabled = cfg.get("recap", {}).get("enabled", True)
+    entries = []
+    day = state.get("day")
+    if not isinstance(day, dict) or "date" not in day:
+        midnight = int(now_ct.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        # if today's recap time has already passed, this record belongs to tomorrow
+        if mins_now >= recap_minutes(cfg):
+            day = new_day((now_ct + timedelta(days=1)).strftime("%Y-%m-%d"), NOW_TS)
+        else:
+            day = new_day(today, midnight)
+            for a in log.get("alerts", []):  # backfill what was already logged today
+                if a.get("ts", 0) >= midnight and a.get("watch") not in ("test", "recap") and a.get("tier") in TIER_PTS:
+                    record_find(day, dict(a, key="log:" + a.get("what", "")), pushed=a.get("pushed") == "sent", ts=a["ts"])
+                    day["tiers"][a["tier"]] += 1
+
+    record_sweep(day, planes, candidates, new_alerts)
+
+    due = today > day["date"] or (today == day["date"] and mins_now >= recap_minutes(cfg))
+    if due:
+        late = today > day["date"] or mins_now - recap_minutes(cfg) > 90
+        s = recap_summary(day, cfg)
+        if enabled and state.get("recap_sent") != day["date"]:
+            push_recap(s, cfg, late=late)
+            entries.append(recap_log_entry(s))
+            print("RECAP:", s["title"], "|", s.get("pushed"))
+        else:
+            s["pushed"] = "recap off" if not enabled else "already sent"
+        state["recap_sent"] = day["date"]
+        state["last_recap"] = s
+        nxt = (now_ct + timedelta(days=1)).strftime("%Y-%m-%d") if today == day["date"] else today
+        if today > day["date"] and mins_now >= recap_minutes(cfg):
+            nxt = (now_ct + timedelta(days=1)).strftime("%Y-%m-%d")
+        day = new_day(nxt, NOW_TS)
+    state["day"] = day
+
+    if TEST_RECAP:
+        # what the recap would say right now (or the one just sent, if the day only just rolled over)
+        s = dict(state["last_recap"]) if (not day["sweeps"] and state.get("last_recap")) else recap_summary(day, cfg)
+        s["end"] = NOW_TS
+        s["test"] = True
+        push_recap(s, cfg, test=True)
+        entries.append(recap_log_entry(s))
+        print("TEST RECAP:", s.get("pushed"))
+        print(s["body"])
+
+    cur = recap_summary(day, cfg)
+    save_json("recap.json", {"updated": NOW_TS, "enabled": enabled, "recap_at": recap_clock(cfg),
+                             "today": cur, "last": state.get("last_recap")})
+    return entries
+
+
 def main():
     os.makedirs(DATA_DIR, exist_ok=True)
     state = load_json("state.json", {})
@@ -838,7 +1106,13 @@ def main():
 
     keep = ("id", "ts", "tier", "what", "title", "body", "headline", "location", "assets", "response",
             "source", "threat", "region", "lat", "lon", "link", "more", "pushed", "held", "watch", "count")
-    log["alerts"] = ([{k: a[k] for k in keep if k in a} for a in new_alerts] + log.get("alerts", []))[:400]
+    try:
+        recap_entries = run_recap(state, cfg, planes, candidates, new_alerts, log)
+    except Exception as e:  # the recap must never break the regular alerts
+        print("recap error:", type(e).__name__, e)
+        recap_entries = []
+    log["alerts"] = ([{k: a[k] for k in keep if a.get(k) is not None} for a in recap_entries] +
+                     [{k: a[k] for k in keep if k in a} for a in new_alerts] + log.get("alerts", []))[:400]
     save_json("alerts.json", log)
 
     stats = {c: 0 for c in ("tanker", "bomber", "airlift", "tactical", "isr", "c2", "fighter", "other")}

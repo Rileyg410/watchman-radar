@@ -9,6 +9,10 @@ on:
         description: "Send a test push to the ntfy topic"
         type: boolean
         default: false
+      test_recap:
+        description: "Send a test end-of-day recap (today's top finds so far)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -37,6 +41,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           DATA_DIR: datadir
           TEST_PUSH: ${{ github.event.inputs.test_push }}
+          TEST_RECAP: ${{ github.event.inputs.test_recap }}
         run: python3 watcher/watch.py
 
       - name: Publish to the dashboard

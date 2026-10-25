@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WATCHMAN RADAR // Riley's Command Center</title>
+<meta name="description" content="Riley's live military and world-events radar. WATCHTOWER online.">
+<meta name="theme-color" content="#020806">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Watchman Radar">
+<meta property="og:title" content="WATCHMAN RADAR">
+<meta property="og:description" content="Riley's command center. Live military movements, world events, WATCHTOWER alerts.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="scanlines"></div>
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="32" cy="32" r="7" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/><path d="M32 32 L54 14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="24" r="3" fill="#ff3b3b"/></svg>
+    <div>
+      <h1>WATCHMAN <span>RADAR</span></h1>
+      <div class="sub">COMMAND: <b>RILEY</b> &middot; <span id="sysline">WATCHTOWER LINKING&hellip;</span></div>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="clock"><label>CENTRAL</label><b id="clockCT">--:--:--</b></div>
+    <div class="clock"><label>ZULU</label><b id="clockZ">--:--:--</b></div>
+    <div class="threat" id="threatcon"><label>THREATCON</label><b>----</b></div>
+    <div class="sweep" id="sweepbox"><label>LAST SWEEP</label><b id="sweepAge">--</b></div>
+    <button class="cmdbtn" id="openCmd">&#9881; COMMAND</button>
+  </div>
+</header>
+
+<main class="grid" id="grid">
+  <section class="panel scopepanel" data-tab="scope">
+    <div class="ptitle">PPI SCOPE <span>// HOME BASE CENTER</span></div>
+    <div class="scopewrap"><canvas id="scope"></canvas><div class="scopeinfo" id="scopeinfo"></div></div>
+    <div class="stats" id="stats"></div>
+    <div class="ptitle">THEATER BOARD <span>// LIVE vs NORMAL</span></div>
+    <div class="board" id="board"></div>
+    <div class="srcs" id="srcs"></div>
+  </section>
+
+  <section class="panel mappanel" data-tab="map">
+    <div class="ptitle">TACTICAL MAP <span id="mapcount"></span></div>
+    <div class="chips" id="catchips"></div>
+    <div id="map"></div>
+  </section>
+
+  <section class="panel feedpanel" data-tab="feed">
+    <div class="ptitle">WATCHTOWER FEED <span id="feedcount"></span></div>
+    <div class="chips" id="tierchips"></div>
+    <div class="feed" id="feed"><div class="empty">Waiting for first sweep&hellip;</div></div>
+  </section>
+</main>
+
+<nav class="tabs" id="tabs">
+  <button data-go="scope">&#9673;<span>SCOPE</span></button>
+  <button data-go="map" class="on">&#9992;<span>MAP</span></button>
+  <button data-go="feed">&#9888;<span>FEED</span><i id="feedBadge"></i></button>
+  <button data-go="cmd">&#9881;<span>COMMAND</span></button>
+</nav>
+
+<aside class="cmd" id="cmd" aria-hidden="true">
+  <div class="cmdhead">
+    <div><h2>COMMAND CENTER</h2><div class="sub">YOUR ORDERS GO STRAIGHT TO WATCHTOWER</div></div>
+    <button class="x" id="closeCmd">&times;</button>
+  </div>
+
+  <div id="lockBox" class="box lock">
+    <h3>&#128274; AUTHENTICATE</h3>
+    <p>Enter your ntfy topic name to unlock the controls on this device. It stays saved here after that.</p>
+    <div class="row"><input id="topicIn" placeholder="watchman-radar-&hellip;" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="unlockBtn" class="go">UNLOCK</button></div>
+    <div class="msg" id="lockMsg"></div>
+  </div>
+
+  <div id="controls" class="locked">
+    <div class="box master">
+      <div class="sw big"><span>&#128225; ALERT PUSHES</span><label class="tog"><input type="checkbox" id="masterOn"><i></i></label></div>
+      <div class="hint" id="masterHint">ON: WATCHTOWER pushes to your phone. OFF: it keeps watching and logging, silently.</div>
+    </div>
+
+    <div class="box">
+      <h3>PUSH THESE TIERS</h3>
+      <div class="sw"><span><b class="t-flash">&#128997; FLASH</b> nukes, missiles, bombers &amp; warships near US/Europe</span><label class="tog"><input type="checkbox" data-k="push.FLASH"><i></i></label></div>
+      <div class="sw"><span><b class="t-imm">&#128999; IMMEDIATE</b> buildups, surges, airlifts, Ukraine pushes</span><label class="tog"><input type="checkbox" data-k="push.IMMEDIATE"><i></i></label></div>
+      <div class="sw"><span><b class="t-rou">&#128998; ROUTINE</b> logged movements (quiet push)</span><label class="tog"><input type="checkbox" data-k="push.ROUTINE"><i></i></label></div>
+    </div>
+
+    <div class="box">
+      <h3>WATCHES</h3>
+      <div class="tgrid" id="watchGrid"></div>
+    </div>
+
+    <div class="box">
+      <h3>THEATERS</h3>
+      <div class="tgrid" id="regionGrid"></div>
+    </div>
+
+    <div class="box">
+      <h3>QUIET HOURS <small>(Central)</small></h3>
+      <div class="sw"><span>Hold pushes overnight</span><label class="tog"><input type="checkbox" data-k="quiet.enabled"><i></i></label></div>
+      <div class="row times"><label>FROM <input type="time" data-k="quiet.start"></label><label>TO <input type="time" data-k="quiet.end"></label></div>
+      <div class="sw"><span>&#128997; FLASH still breaks through</span><label class="tog"><input type="checkbox" data-k="quiet.flash_breaks"><i></i></label></div>
+    </div>
+
+    <div class="box">
+      <h3>SURGE SENSITIVITY</h3>
+      <div class="seg" id="sensSeg">
+        <button data-v="low">LOW<small>only big moves</small></button>
+        <button data-v="normal">NORMAL<small>balanced</small></button>
+        <button data-v="high">HIGH<small>catch more</small></button>
+      </div>
+    </div>
+
+    <div class="box transmit">
+      <button id="saveBtn" class="go wide">&#10148; TRANSMIT ORDERS TO WATCHTOWER</button>
+      <div class="msg" id="saveMsg"></div>
+    </div>
+
+    <div class="box">
+      <h3>TEST ALERT</h3>
+      <p>Fire a sample alert to your phone right now to check it comes through.</p>
+      <div class="seg small" id="testSeg">
+        <button data-v="FLASH">FLASH</button><button data-v="IMMEDIATE">IMMEDIATE</button><button data-v="ROUTINE" class="on">ROUTINE</button>
+      </div>
+      <button id="testBtn" class="go wide warn">&#128680; SEND TEST ALERT</button>
+      <div class="msg" id="testMsg"></div>
+    </div>
+
+    <div class="box">
+      <h3>DEVICE</h3>
+      <p>Not getting pushes? Open the ntfy app, tap +, and subscribe to your topic on server ntfy.sh.</p>
+      <div class="row"><a class="go ghost" id="ntfyLink" target="_blank" rel="noopener">OPEN MY TOPIC</a><button class="go ghost" id="lockAgain">LOCK THIS DEVICE</button></div>
+    </div>
+  </div>
+  <div class="sig">&mdash; WATCHTOWER</div>
+</aside>
+<div class="shade" id="shade"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

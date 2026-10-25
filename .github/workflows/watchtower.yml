@@ -1,0 +1,50 @@
+name: WATCHTOWER sweep
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_push:
+        description: "Send a test push to the ntfy topic"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watchtower
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load last sweep's memory
+        run: |
+          mkdir -p datadir
+          if git fetch --depth=1 origin data 2>/dev/null; then
+            git archive FETCH_HEAD | tar -x -C datadir
+          fi
+          ls -la datadir
+
+      - name: Sweep
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          DATA_DIR: datadir
+          TEST_PUSH: ${{ github.event.inputs.test_push }}
+        run: python3 watcher/watch.py
+
+      - name: Publish to the dashboard
+        run: |
+          cd datadir
+          rm -f *.tmp
+          git init -q
+          git checkout -q -b data
+          git add -A
+          git -c user.name="WATCHTOWER" -c user.email="watchtower@users.noreply.github.com" commit -qm "sweep $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" data

@@ -428,7 +428,9 @@ def aircraft_alerts(planes, cfg, state):
                 location=f"{REGION_LABEL.get(p['rg'], 'Unknown')} ({p['lat']:.1f}, {p['lon']:.1f})",
                 assets=fmt_assets([p]) + alt_txt(p), response="Squawk " + p["sq"] + " set by the crew.",
                 source="adsb.lol live ADS-B (military feed)",
-                threat="ELEVATED" if p["sq"] == "7500" else "LOW", region=p["rg"], lat=p["lat"], lon=p["lon"]))
+                threat="ELEVATED" if p["sq"] == "7500" else "LOW", region=p["rg"], lat=p["lat"], lon=p["lon"],
+                sq=p["sq"], hex=p.get("hex"), cs=p.get("cs") or "", type=p.get("t") or "", reg=p.get("reg") or "",
+                alt=p.get("alt"), gs=p.get("gs"), trk=p.get("trk"), vr=p.get("vr"), nat=p.get("nat")))
 
     # Learn the normal level (slow moving average) after scoring
     for r in [x[0] for x in REGIONS]:
@@ -729,16 +731,56 @@ def in_quiet(cfg):
         return False
 
 
+# ----------------------------------------------------------------- alert screen links
+# Tapping a phone alert opens the full-screen alert screen on the radar, on that alert.
+# The link carries a small copy of the alert, so the screen can show it right away,
+# even before this sweep's alerts.json reaches the site.
+SCREEN_FIELDS = (("id", "i"), ("ts", "t"), ("tier", "r"), ("what", "w"), ("sq", "q"), ("hex", "h"), ("cs", "c"),
+                 ("type", "y"), ("alt", "a"), ("gs", "g"), ("trk", "k"), ("vr", "v"), ("lat", "la"), ("lon", "lo"),
+                 ("region", "rg"), ("nat", "n"), ("route", "ro"), ("count", "ct"), ("watch", "wa"))
+
+
+def screen_url(a, extra=""):
+    if not SITE_URL:
+        return ""
+    import base64
+    d = {short: a[k] for k, short in SCREEN_FIELDS if a.get(k) not in (None, "")}
+    if a.get("headline"):
+        d["hl"] = a["headline"][:150]
+    if a.get("assets") and not a.get("sq"):
+        d["as"] = a["assets"][:160]
+    blob = base64.urlsafe_b64encode(json.dumps(d, ensure_ascii=False, separators=(",", ":")).encode()).decode().rstrip("=")
+    return f"{SITE_URL}#alert/{a.get('id', 'x')}/{blob}{extra}"
+
+
+def track_url(a):
+    if not SITE_URL or a.get("lat") is None:
+        return ""
+    return f"{SITE_URL}#track/{a.get('hex') or 'x'}/{a['lat']}/{a['lon']}"
+
+
+def push_actions(a):
+    acts = []
+    if a.get("sq"):
+        if track_url(a):
+            acts.append({"action": "view", "label": "Track it", "url": track_url(a)})
+        acts.append({"action": "view", "label": "Pray", "url": screen_url(a, "/pray")})
+    acts.append({"action": "view", "label": "Open Radar", "url": SITE_URL})
+    if a.get("link") and len(acts) < 3:
+        acts.append({"action": "view", "label": "Read story", "url": a["link"]})
+    return acts[:3]
+
+
 def push(a, title, body):
     if not TOPIC:
         return "no topic"
     payload = {"topic": TOPIC, "title": title, "message": body, "priority": a.get("priority_override") or TIER_PRIO[a["tier"]],
                "tags": [{"FLASH": "rotating_light", "IMMEDIATE": "warning", "ROUTINE": "satellite"}[a["tier"]]]}
-    click = a.get("link") or SITE_URL
+    click = screen_url(a) or a.get("link") or SITE_URL
     if click:
         payload["click"] = click
     if SITE_URL:
-        payload["actions"] = [{"action": "view", "label": "Open Radar", "url": SITE_URL}]
+        payload["actions"] = push_actions(a)
     if DRY_RUN:
         print("DRY PUSH:", json.dumps(payload, ensure_ascii=False)[:600])
         return "dry"
@@ -1014,6 +1056,49 @@ def run_recap(state, cfg, planes, candidates, new_alerts, log):
     return entries
 
 
+# ----------------------------------------------------------------- squawk log
+# squawks.json: every emergency code (7700 / 7600 / 7500) WATCHTOWER has caught, newest first.
+# Feeds the EMERGENCY SQUAWKS screen on the radar.
+SQUAWK_KEEP = ("id", "ts", "tier", "sq", "what", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "lat", "lon",
+               "region", "location", "nat", "route", "pushed", "held")
+SQUAWK_DAYS = 60
+
+
+def lookup_route(a):
+    """Where the flight is going, if adsb.lol knows (usually only airline flights). Never fails loudly."""
+    if DRY_RUN or not a.get("cs") or a.get("lat") is None:
+        return None
+    try:
+        body = json.dumps({"planes": [{"callsign": a["cs"], "lat": a["lat"], "lng": a["lon"]}]}).encode()
+        req = urllib.request.Request("https://api.adsb.lol/api/0/routeset", data=body, method="POST",
+                                     headers={"Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            res = json.loads(r.read())
+        for x in res if isinstance(res, list) else []:
+            iata = str(x.get("_airport_codes_iata") or "")
+            if x.get("plausible") and iata and "unknown" not in iata.lower() and "-" in iata:
+                return iata.replace("-", "\u2192")
+    except Exception as e:
+        print("route lookup skipped:", type(e).__name__)
+    return None
+
+
+def save_squawks(new_alerts):
+    log = load_json("squawks.json", {"squawks": []})
+    fresh = []
+    for a in new_alerts:
+        if not a.get("sq"):
+            continue
+        if "route" not in a:
+            a["route"] = lookup_route(a)
+        fresh.append({k: a[k] for k in SQUAWK_KEEP if a.get(k) is not None})
+    cutoff = NOW_TS - SQUAWK_DAYS * 86400
+    old = [s for s in log.get("squawks", []) if s.get("ts", 0) >= cutoff]
+    save_json("squawks.json", {"updated": NOW_TS, "days": SQUAWK_DAYS, "squawks": (fresh + old)[:150]})
+    for s in fresh:
+        print("SQUAWK:", s.get("sq"), s.get("cs") or s.get("hex"), s.get("route") or "")
+
+
 def main():
     os.makedirs(DATA_DIR, exist_ok=True)
     state = load_json("state.json", {})
@@ -1070,6 +1155,9 @@ def main():
         title = make_title(a["tier"], a["what"])
         body = make_body(a)
         a["title"], a["body"] = title, body
+        a["id"] = hashlib.sha1(f"{a['key']}{NOW_TS}".encode()).hexdigest()[:10]
+        if a.get("sq") and "route" not in a:
+            a["route"] = lookup_route(a)
         want = cfg["push"].get(a["tier"], False) and not cfg.get("paused")
         if quiet and not (a["tier"] == "FLASH" and cfg["quiet"].get("flash_breaks", True)):
             want = False
@@ -1088,25 +1176,25 @@ def main():
             time.sleep(1)
         elif want:
             a["held"] = "too many this sweep"
-        a["id"] = hashlib.sha1(f"{a['key']}{NOW_TS}".encode()).hexdigest()[:10]
 
     if TEST_PUSH:
         t = {"tier": "ROUTINE", "what": "TEST - WATCHTOWER ONLINE", "location": "Riley's command center",
-             "assets": f"{len(planes)} military aircraft on the scope", "response": "No action needed. This is a test.",
+             "assets": f"{len(planes)} military aircraft on the scope",
+             "response": "Tap this alert to open your alert screen. No action needed, this is only a test.",
              "source": "Watchman Radar backend (GitHub Actions)", "threat": "NONE", "ts": NOW_TS,
-             "key": "test", "watch": "test"}
+             "key": "test", "watch": "test", "id": "test" + str(NOW_TS)}
         t["title"], t["body"] = make_title("ROUTINE", t["what"]), make_body(t)
         t["priority_override"] = 3
         try:
             t["pushed"] = push(t, t["title"], t["body"])
         except Exception as e:
             t["pushed"] = f"failed: {type(e).__name__}"
-        t["id"] = "test" + str(NOW_TS)
         new_alerts.append(t)
         print("TEST PUSH:", t["pushed"])
 
     keep = ("id", "ts", "tier", "what", "title", "body", "headline", "location", "assets", "response",
-            "source", "threat", "region", "lat", "lon", "link", "more", "pushed", "held", "watch", "count")
+            "source", "threat", "region", "lat", "lon", "link", "more", "pushed", "held", "watch", "count",
+            "sq", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "nat", "route")
     try:
         recap_entries = run_recap(state, cfg, planes, candidates, new_alerts, log)
     except Exception as e:  # the recap must never break the regular alerts
@@ -1115,6 +1203,10 @@ def main():
     log["alerts"] = ([{k: a[k] for k in keep if a.get(k) is not None} for a in recap_entries] +
                      [{k: a[k] for k in keep if k in a} for a in new_alerts] + log.get("alerts", []))[:400]
     save_json("alerts.json", log)
+    try:
+        save_squawks(new_alerts)
+    except Exception as e:  # the squawk log must never break the regular alerts
+        print("squawk log error:", type(e).__name__, e)
 
     stats = {c: 0 for c in ("tanker", "bomber", "airlift", "tactical", "isr", "c2", "fighter", "other")}
     board = {}

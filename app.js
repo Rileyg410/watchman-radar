@@ -185,8 +185,9 @@ function planeSvg(col, big) {
   const s = big ? 26 : 18;
   return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="color:${col}"><path fill="${col}" stroke="#000" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="M12 2c.6 0 1 .5 1 1.2V9l8 4.6v2l-8-2.3v4.9l2.4 1.7V21L12 20l-3.4 1v-1.1L11 18.2v-4.9L3 15.6v-2L11 9V3.2C11 2.5 11.4 2 12 2z"/></svg>`;
 }
+const markerByHex = new Map();
 function drawPlanes() {
-  acLayer.clearLayers();
+  acLayer.clearLayers(); markerByHex.clear();
   if (!live) return;
   let shown = 0;
   for (const p of live.planes) {
@@ -201,7 +202,9 @@ function drawPlanes() {
     const ids = [p.cs, p.reg].filter(Boolean);
     const cat = CATS[p.cat] ? p.cat : 'other';
     const over = REGIONS[p.rg] ? REGIONS[p.rg][0] : 'open water';
-    L.marker([p.lat, p.lon], {icon}).bindPopup(
+    const mk = L.marker([p.lat, p.lon], {icon});
+    if (p.hex) markerByHex.set(String(p.hex), mk);
+    mk.bindPopup(
       `<div class="pp"><b>${esc(nm)}</b><div class="pk">${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}</div>` +
       (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
       (sq ? `<div class="pf">${sq}</div>` : '') +
@@ -417,6 +420,7 @@ async function refresh() {
     if (firstLoad && !seenIds.size) { alerts.forEach(x => seenIds.add(x.id)); localStorage.setItem('wr_seen', JSON.stringify([...seenIds].slice(-500))); }
     setBlips(); drawStats(); drawBoard(); drawPlanes(); drawAlertPings(); drawFeed(); drawTopFinds(); threatcon(); tick();
     checkApplied();
+    WR.hooks.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } });
   } catch (e) {
     $('#sysline').textContent = 'WAITING FOR THE FIRST CHECK';
     console.warn(e);
@@ -557,6 +561,27 @@ function showTab(t) {
 }
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.go));
 showTab('map');
+
+// ---------------------------------------------------------------- shared with squawk.js (alert screen)
+let trackPin = null;
+function trackPlane(hex, lat, lon, label) {
+  showTab('map');
+  setTimeout(() => {
+    map.invalidateSize();
+    const mk = hex && markerByHex.get(String(hex));
+    if (mk) { map.flyTo(mk.getLatLng(), 7, {duration: 1}); setTimeout(() => mk.openPopup(), 1100); return; }
+    const lp = hex && live && live.planes ? live.planes.find(q => String(q.hex) === String(hex)) : null;
+    if (lp) { lat = lp.lat; lon = lp.lon; }
+    const note = lp ? 'This kind of plane is switched off in your map filters, so here is its spot.' : "It isn't on the radar right now, so this is where it was last seen.";
+    if (lat == null || isNaN(lat)) { toast('That plane is off the radar now.'); return; }
+    if (trackPin) map.removeLayer(trackPin);
+    const icon = L.divIcon({className: 'trackpin', iconSize: [34, 34], iconAnchor: [17, 17], html: '<div></div>'});
+    trackPin = L.marker([lat, lon], {icon}).bindPopup(`<div class="pp"><b>${esc(label || 'Last seen here')}</b><div class="pm">${esc(fromHome(lat, lon))}</div><div class="pm">${esc(note)}</div></div>`, {maxWidth: 260}).addTo(map);
+    map.flyTo([lat, lon], 7, {duration: 1}); setTimeout(() => trackPin && trackPin.openPopup(), 1100);
+  }, 80);
+}
+const WR = window.WR = {hooks: [], DATA, getJSON, showTab, trackPlane, toast, ago,
+  get live() { return live; }, get alerts() { return alerts; }, get lastTab() { return lastTab; }};
 
 // ---------------------------------------------------------------- go
 buildChips(); buildToggles(); paint();

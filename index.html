@@ -17,7 +17,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="squawk.css?v=5">
 </head>
 <body>
 <div class="scanlines"></div>
@@ -34,6 +35,7 @@
     <div class="clock"><label>ZULU</label><b id="clockZ">--:--:--</b></div>
     <div class="threat" id="threatcon"><label>THREAT LEVEL <button class="i" data-tip="threat" aria-label="What is this?">i</button></label><b>----</b></div>
     <div class="sweep" id="sweepbox"><label>LAST CHECK <button class="i" data-tip="lastcheck" aria-label="What is this?">i</button></label><b id="sweepAge">--</b></div>
+    <button class="cmdbtn sqbtn" id="openSq">&#9888; SQUAWKS</button>
     <button class="cmdbtn" id="openCmd">&#9881; COMMAND</button>
   </div>
 </header>
@@ -67,8 +69,27 @@
   <button data-go="scope">&#9673;<span>RADAR</span></button>
   <button data-go="map" class="on">&#9992;<span>MAP</span></button>
   <button data-go="feed">&#9888;<span>ALERTS</span><i id="feedBadge"></i></button>
+  <button data-go="sq" class="sqtab"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 18v-5a5.5 5.5 0 0 1 11 0v5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21h16M12 2.5v2M4.6 5.6l1.4 1.4M19.4 5.6 18 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="14" r="1.8" fill="currentColor"/></svg><span>SQUAWK</span><i id="sqBadge"></i></button>
   <button data-go="cmd">&#9881;<span>COMMAND</span></button>
 </nav>
+
+<section class="sqs" id="sqs" aria-hidden="true" aria-label="Emergency squawks">
+  <div class="sqbg" aria-hidden="true"><div class="sqring"><div class="sqsweep"></div></div></div>
+  <div class="sqscroll" id="sqscroll">
+    <header class="sqtop">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="32" cy="32" r="7" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/><path d="M32 32 L54 14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="24" r="3" fill="#ff3b3b"/></svg>
+      <div class="sqbrand"><h1>WATCHMAN <span>RADAR</span></h1><div class="sub">COMMAND: <b>RILEY</b> &middot; <span id="sqsys">WATCHTOWER ONLINE</span></div></div>
+      <button class="sqx" id="closeSq" aria-label="Back to the radar">&times;</button>
+    </header>
+    <div class="sqttl">EMERGENCY SQUAWKS<span id="sqlive">live &middot; checking&hellip;</span></div>
+    <div class="sqkey" id="sqkey"></div>
+    <div class="sqcards" id="sqfeat"></div>
+    <div class="sqsec" id="sqoldt"></div>
+    <div class="sqcards" id="sqlist"></div>
+    <div class="sqfoot" id="sqfoot"></div>
+  </div>
+  <div class="sqpray" id="sqpray" aria-hidden="true"><div class="sqpcard" role="dialog" aria-label="Prayer"><div class="sqph">&#128591; PRAY</div><div id="sqptext"></div><div class="sqpv" id="sqpverse"></div><div class="act"><button class="go" id="sqpamen">Amen</button><button id="sqpclose">Close</button></div></div></div>
+</section>
 
 <aside class="cmd" id="cmd" aria-hidden="true">
   <div class="cmdhead">
@@ -157,7 +178,8 @@
 <div class="tip" id="tip" role="tooltip"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="plain.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="plain.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="squawk.js?v=5"></script>
 </body>
 </html>

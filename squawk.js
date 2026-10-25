@@ -185,7 +185,7 @@ function render() {
     if (top) { feat = squawkCard(top, true); rest = list.filter(s => s.id !== top.id); }
     else if (!loaded && !all.length) feat = quietCard('Checking the log\u2026');
     else feat = quietCard(filter ? `No ${filter} (${CODES[filter].short}) codes in the log right now.`
-      : 'No military plane on the radar is sending an emergency code. If one sets 7700, 7600 or 7500, it lights up right here and your phone gets an alert.');
+      : 'No military plane on the radar is sending an emergency code. The moment one sets 7700, 7600 or 7500, it lights up right here.');
   }
   $('#sqfeat').innerHTML = feat;
   if (alertMode) {

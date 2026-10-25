@@ -263,6 +263,7 @@ def pull_aircraft():
             "alt": alt if isinstance(alt, (int, float)) else None,
             "gs": round(a["gs"]) if isinstance(a.get("gs"), (int, float)) else None,
             "trk": round(a["track"]) if isinstance(a.get("track"), (int, float)) else None,
+            "vr": round(a.get("baro_rate") if isinstance(a.get("baro_rate"), (int, float)) else a["geom_rate"]) if isinstance(a.get("baro_rate"), (int, float)) or isinstance(a.get("geom_rate"), (int, float)) else None,
             "sq": a.get("squawk") or "", "cat": cat, "rg": region_of(lat, lon),
             "nat": nation_of(a.get("hex") or ""),
         })

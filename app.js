@@ -20,33 +20,33 @@ function dataBase() {
 const DATA = dataBase();
 
 const CATS = {
-  tanker:  {n: 'TANKERS',  c: '#ffb000'},
-  bomber:  {n: 'BOMBERS',  c: '#ff3b3b'},
-  airlift: {n: 'AIRLIFT',  c: '#38bdf8'},
-  tactical:{n: 'C-130s',   c: '#7dd3fc'},
-  isr:     {n: 'SPY/ISR',  c: '#c084fc'},
-  c2:      {n: 'NUKE C2',  c: '#ff4fd8'},
-  fighter: {n: 'FIGHTERS', c: '#a3ff3b'},
-  other:   {n: 'OTHER',    c: '#3fbf86'},
+  tanker:  {n: 'Refueling planes',          s: 'Refueling',  k: 'refueling plane',        c: '#ffb000'},
+  bomber:  {n: 'Bombers',                   s: 'Bombers',    k: 'bomber',                 c: '#ff3b3b'},
+  airlift: {n: 'Big cargo planes',          s: 'Big cargo',  k: 'big cargo plane',        c: '#38bdf8'},
+  tactical:{n: 'Small cargo planes',        s: 'Small cargo', k: 'small cargo plane',     c: '#7dd3fc'},
+  isr:     {n: 'Spy & surveillance planes', s: 'Spy',        k: 'spy & surveillance plane', c: '#c084fc'},
+  c2:      {n: 'Nuclear command planes',    s: 'Nuclear command', k: 'nuclear command plane', c: '#ff4fd8'},
+  fighter: {n: 'Fighter jets',              s: 'Fighters',   k: 'fighter jet',            c: '#a3ff3b'},
+  other:   {n: 'Other military planes',     s: 'Other',      k: 'military plane',         c: '#3fbf86'},
 };
 const WATCHES = [
-  ['nuclear', 'Nuclear drills'], ['missiles', 'Missile tests'], ['bombers', 'Bombers'],
-  ['warships', 'Warships near US/Cuba'], ['foreign_mil', 'Foreign jets near US/EU'], ['subs', 'Sub Watch'],
-  ['tankers', 'Tanker surges'], ['airlift', 'Airlift surges'], ['buildups', 'Troop buildups'],
-  ['ukraine', 'Ukraine pushes'], ['russia', 'Russia moves'], ['hormuz', 'Hormuz watch'],
+  ['nuclear', 'Nuclear drills & command planes'], ['missiles', 'Missile tests'], ['bombers', 'Bombers'],
+  ['warships', 'Warships near the US or Cuba'], ['foreign_mil', 'Foreign military jets near the US or Europe'], ['subs', 'Submarines & sub hunters'],
+  ['tankers', 'Lots of refueling planes'], ['airlift', 'Lots of cargo planes'], ['buildups', 'Troop buildups'],
+  ['ukraine', 'Big pushes in Ukraine'], ['russia', 'Russia on the move'], ['hormuz', 'Persian Gulf trouble'],
   ['isr', 'Spy planes'], ['breaking', 'Major breaking news'],
 ];
 const REGIONS = {
-  alaska: ['Alaska / Bering', [[51, -180], [72, -129]]],
-  conus: ['Continental US', [[24, -126], [50, -65]]],
-  cuba: ['Cuba / Caribbean', [[17, -88], [27, -72]]],
+  alaska: ['Alaska', [[51, -180], [72, -129]]],
+  conus: ['Mainland US', [[24, -126], [50, -65]]],
+  cuba: ['Cuba & the Caribbean', [[17, -88], [27, -72]]],
   hawaii: ['Hawaii', [[17, -163], [25, -152]]],
-  europe: ['Europe / N. Atlantic', [[35, -25], [72, 45]]],
-  baltic: ['Baltic / Nordic', [[53.5, 9], [71, 32]]],
-  ukraine: ['Ukraine / Black Sea', [[40.5, 22], [53, 42]]],
-  easternmed: ['E. Med / Israel', [[29, 24], [37.5, 38]]],
-  gulf: ['Gulf / Hormuz', [[12, 38], [31, 63]]],
-  pacific: ['W. Pacific / Taiwan', [[10, 115], [46, 150]]],
+  europe: ['Europe & North Atlantic', [[35, -25], [72, 45]]],
+  baltic: ['Baltic & Scandinavia', [[53.5, 9], [71, 32]]],
+  ukraine: ['Ukraine & the Black Sea', [[40.5, 22], [53, 42]]],
+  easternmed: ['Israel & the Eastern Med', [[29, 24], [37.5, 38]]],
+  gulf: ['Persian Gulf & Hormuz', [[12, 38], [31, 63]]],
+  pacific: ['West Pacific & Taiwan', [[10, 115], [46, 150]]],
 };
 const DEFAULTS = {
   watches: Object.fromEntries(WATCHES.map(w => [w[0], true])),
@@ -78,11 +78,11 @@ function tick() {
   if (live) {
     const age = Math.max(0, Math.round(Date.now() / 1000 - live.updated));
     const m = Math.floor(age / 60);
-    $('#sweepAge').textContent = m < 1 ? 'JUST NOW' : (m < 60 ? m + ' MIN AGO' : Math.floor(m / 60) + 'H ' + (m % 60) + 'M AGO');
+    $('#sweepAge').textContent = m < 1 ? 'JUST NOW' : (m < 60 ? m + ' MIN AGO' : Math.floor(m / 60) + ' HR ' + (m % 60) + ' MIN AGO');
     const box = $('#sweepbox');
     box.classList.toggle('stale', age > 30 * 60 && age <= 120 * 60);
     box.classList.toggle('dead', age > 120 * 60);
-    $('#sysline').textContent = age > 120 * 60 ? 'WATCHTOWER SILENT - CHECK BACKEND' : 'WATCHTOWER ONLINE \u00B7 SWEEP #' + (live.sweeps || 1);
+    $('#sysline').textContent = age > 120 * 60 ? 'WATCHTOWER QUIET: NO CHECK IN 2+ HOURS' : 'WATCHTOWER ONLINE \u00B7 CHECK #' + (live.sweeps || 1);
   }
 }
 setInterval(tick, 1000); tick();
@@ -196,15 +196,22 @@ function drawPlanes() {
     const s = big ? 26 : 18;
     const icon = L.divIcon({className: 'ac' + (f ? ' foreign' : ''), iconSize: [s, s], iconAnchor: [s / 2, s / 2],
       html: `<div style="transform:rotate(${p.trk || 0}deg)">${planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
-    const nm = (window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || '?';
+    const nm = (window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || 'Unknown type';
+    const sq = {'7700': '\u{1F198} Signaling an emergency', '7600': '\u{1F4FB} Reporting radio trouble', '7500': '\u{1F6A8} Sent the hijack code'}[p.sq];
+    const ids = [p.cs, p.reg].filter(Boolean);
+    const cat = CATS[p.cat] ? p.cat : 'other';
+    const over = REGIONS[p.rg] ? REGIONS[p.rg][0] : 'open water';
     L.marker([p.lat, p.lon], {icon}).bindPopup(
-      `<b>${esc(p.cs || p.reg || p.hex)}</b> &middot; ${esc(nm)}<br>${esc((CATS[p.cat] || CATS.other).n)}${f ? ' &middot; <span style="color:#ff3b3b">FOREIGN (' + esc(p.nat) + ')</span>' : ''}<br>` +
-      `ALT ${p.alt != null ? esc(p.alt.toLocaleString()) + ' ft' : '--'} &middot; GS ${p.gs != null ? esc(p.gs) + ' kt' : '--'} &middot; HDG ${p.trk != null ? esc(p.trk) : '--'}<br>` +
-      `${esc(REGIONS[p.rg] ? REGIONS[p.rg][0] : 'Open ocean / other')}${p.sq ? ' &middot; SQK ' + esc(p.sq) : ''}<br>` +
-      `<a href="https://globe.adsb.lol/?icao=${esc(String(p.hex).replace('~', ''))}" target="_blank" rel="noopener" style="color:#3ba7ff">Track on adsb.lol &rarr;</a>`
-    ).addTo(acLayer);
+      `<div class="pp"><b>${esc(nm)}</b><div class="pk">${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}</div>` +
+      (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
+      (sq ? `<div class="pf">${sq}</div>` : '') +
+      `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +
+      `<div class="pm">Over ${esc(over)} \u00B7 ${esc(fromHome(p.lat, p.lon))}</div>` +
+      (ids.length ? `<details class="ids"><summary>Plane ID ${tipBtn('planeid')}</summary><div>${ids.map(esc).join(' &middot; ')}</div></details>` : '') +
+      `<a href="https://globe.adsb.lol/?icao=${esc(String(p.hex).replace('~', ''))}" target="_blank" rel="noopener">Follow this plane live &rarr;</a></div>`
+    , {maxWidth: 280}).addTo(acLayer);
   }
-  $('#mapcount').textContent = `// ${shown} OF ${live.planes.length} MIL AIRCRAFT`;
+  $('#mapcount').textContent = `// showing ${shown} of ${live.planes.length} military planes`;
 }
 function drawAlertPings() {
   alertLayer.clearLayers();
@@ -216,7 +223,7 @@ function drawAlertPings() {
     L.marker([a.lat, a.lon], {icon, interactive: false}).addTo(alertLayer);
   }
 }
-window.TYPE_NAMES = {K35R: 'KC-135R', K35E: 'KC-135E', K46: 'KC-46A', KC46: 'KC-46A', B52: 'B-52', B1: 'B-1B', B2: 'B-2', C17: 'C-17', C5M: 'C-5M', C5: 'C-5', C130: 'C-130', C30J: 'C-130J', R135: 'RC-135', E3TF: 'E-3 AWACS', E3CF: 'E-3 AWACS', P8: 'P-8 Poseidon', E6: 'E-6B Mercury', E4B: 'E-4B', RQ4: 'RQ-4', Q4: 'RQ-4', GLHK: 'RQ-4', MQ9: 'MQ-9', A400: 'A400M', F35: 'F-35', F16: 'F-16', F15: 'F-15', F18S: 'F/A-18', F22: 'F-22', EUFI: 'Typhoon', H60: 'Black Hawk', H47: 'Chinook', V22: 'V-22 Osprey'};
+window.TYPE_NAMES = {K35R: 'KC-135R', K35E: 'KC-135E', K46: 'KC-46A', KC46: 'KC-46A', B52: 'B-52', B1: 'B-1B', B2: 'B-2', C17: 'C-17', C5M: 'C-5M', C5: 'C-5', C130: 'C-130', C30J: 'C-130J', R135: 'RC-135', E3TF: 'E-3 AWACS', E3CF: 'E-3 AWACS', P8: 'P-8 Poseidon', E6: 'E-6B Mercury', E4B: 'E-4B', RQ4: 'RQ-4', Q4: 'RQ-4', GLHK: 'RQ-4', MQ9: 'MQ-9', A400: 'A400M', F35: 'F-35', F16: 'F-16', F15: 'F-15', F18S: 'F/A-18', F22: 'F-22', EUFI: 'Typhoon', H60: 'Black Hawk', H47: 'Chinook', V22: 'V-22 Osprey', TEX2: 'T-6 Texan II', HAWK: 'T-45 Goshawk', T38: 'T-38 Talon', TUCA: 'Tucano', B737: 'Boeing 737', B736: 'Boeing 737', B738: 'Boeing 737', B762: 'Boeing 767', A332: 'Airbus A330', A319: 'Airbus A319', GLF5: 'Gulfstream jet', GL5T: 'Global 5000 jet', C560: 'Citation jet', H25B: 'Hawker jet', F2TH: 'Falcon 2000 jet', BE20: 'King Air', BE9L: 'King Air', AS65: 'Dolphin helicopter', EC45: 'Lakota helicopter', A119: 'Koala helicopter', C27J: 'C-27J Spartan', E390: 'KC-390', P28A: 'Piper Cherokee', C172: 'Cessna 172', DHC6: 'Twin Otter', TWR: 'Ground station'};
 
 // ---------------------------------------------------------------- chips
 function buildChips() {
@@ -224,36 +231,38 @@ function buildChips() {
   for (const [k, v] of Object.entries(CATS)) {
     const b = document.createElement('button');
     b.className = 'chip' + (catOn.has(k) ? ' on' : '');
-    b.innerHTML = `<i style="background:${v.c}"></i>${v.n}`;
+    b.innerHTML = `<i style="background:${v.c}"></i>${v.s}`;
     b.onclick = () => { catOn.has(k) ? catOn.delete(k) : catOn.add(k); buildChips(); drawPlanes(); };
     cc.appendChild(b);
   }
+  cc.insertAdjacentHTML('beforeend', tipBtn('cats'));
   const tc = $('#tierchips'); tc.innerHTML = '';
   for (const [k, cls] of [['ALL', ''], ['FLASH', 'fl'], ['IMMEDIATE', 'im'], ['ROUTINE', 'ro']]) {
     const b = document.createElement('button');
     b.className = 'chip ' + cls + (tierOn === k ? ' on' : '');
-    b.textContent = (ICON[k] ? ICON[k] + ' ' : '') + k;
+    b.textContent = ICON[k] ? ICON[k] + ' ' + {FLASH: 'Urgent', IMMEDIATE: 'Important', ROUTINE: 'FYI'}[k] : 'All';
     b.onclick = () => { tierOn = k; buildChips(); drawFeed(); };
     tc.appendChild(b);
   }
+  tc.insertAdjacentHTML('beforeend', tipBtn('tiers'));
 }
 
 // ---------------------------------------------------------------- panels
 function ago(ts) {
   const s = Math.max(0, Date.now() / 1000 - ts);
   if (s < 90) return 'just now';
-  if (s < 3600) return Math.round(s / 60) + 'm ago';
-  if (s < 86400) return Math.round(s / 3600) + 'h ago';
-  return Math.round(s / 86400) + 'd ago';
+  if (s < 3600) return Math.round(s / 60) + ' min ago';
+  if (s < 86400) { const h = Math.round(s / 3600); return h + (h === 1 ? ' hour ago' : ' hours ago'); }
+  const d = Math.round(s / 86400); return d + (d === 1 ? ' day ago' : ' days ago');
 }
 function drawStats() {
   const st = live ? live.stats : {};
   const tot = live ? live.planes.length : 0;
-  const tiles = [['MIL AIRCRAFT', tot, ''], ['TANKERS', st.tanker || 0, ''], ['BOMBERS', st.bomber || 0, (st.bomber || 0) > 0 ? 'red' : ''],
-    ['AIRLIFT', st.airlift || 0, ''], ['SPY / ISR', st.isr || 0, ''], ['NUKE C2', st.c2 || 0, (st.c2 || 0) > 0 ? 'hot' : '']];
-  $('#stats').innerHTML = tiles.map(t => `<div class="stat ${t[2]}"><label>${t[0]}</label><b>${t[1]}</b></div>`).join('');
+  const tiles = [['All military planes', tot, '', 'total'], ['Refueling planes', st.tanker || 0, '', 'tanker'], ['Bombers', st.bomber || 0, (st.bomber || 0) > 0 ? 'red' : '', 'bomber'],
+    ['Big cargo planes', st.airlift || 0, '', 'airlift'], ['Spy & surveillance', st.isr || 0, '', 'isr'], ['Nuclear command', st.c2 || 0, (st.c2 || 0) > 0 ? 'hot' : '', 'c2']];
+  $('#stats').innerHTML = tiles.map(t => `<div class="stat ${t[2]}"><label>${t[0]} ${tipBtn(t[3])}</label><b>${t[1]}</b></div>`).join('');
   const foreign = live ? live.planes.filter(p => p.nat && p.nat !== 'US').length : 0;
-  $('#scopeinfo').innerHTML = `${tot} CONTACTS<br>${foreign ? '<span style="color:#ff3b3b">' + foreign + ' FOREIGN</span>' : 'NO FOREIGN MIL ON ADS-B'}`;
+  $('#scopeinfo').innerHTML = `${tot} planes on radar<br>${foreign ? '<span style="color:#ff3b3b">' + foreign + ' foreign military</span>' : 'No foreign military showing'}`;
 }
 function regionLamp(r) {
   const day = Date.now() / 1000 - 24 * 3600;
@@ -270,15 +279,21 @@ function drawBoard() {
     const t = b.tanker || 0, a = b.airlift || 0;
     const tUp = b.base_tanker != null && t >= Math.max(2, b.base_tanker * 2);
     const aUp = b.base_airlift != null && a >= Math.max(2, b.base_airlift * 2);
-    return `<div class="brow ${off ? 'off' : ''}" data-r="${k}"><span class="lamp ${off ? 'off' : regionLamp(k)}"></span><span class="nm">${v[0]}</span>` +
-      `<span class="ct">\u2708 <b>${b.total || 0}</b> T<b class="${tUp ? 'up' : ''}">${t}</b> A<b class="${aUp ? 'up' : ''}">${a}</b> B<b class="${(b.bomber || 0) ? 'up' : ''}">${b.bomber || 0}</b></span></div>`;
+    const n = b.total || 0, bits = [];
+    if (t) bits.push(`<b class="${tUp ? 'up' : ''}">${t} refueling${tUp ? ' \u25B2' : ''}</b>`);
+    if (a) bits.push(`<b class="${aUp ? 'up' : ''}">${a} cargo${aUp ? ' \u25B2' : ''}</b>`);
+    if (b.bomber) bits.push(`<b class="up">${b.bomber} bomber${b.bomber > 1 ? 's' : ''}</b>`);
+    return `<div class="brow ${off ? 'off' : ''}" data-r="${k}"><span class="lamp ${off ? 'off' : regionLamp(k)}"></span>` +
+      `<span class="bt"><span class="nm">${v[0]}</span><span class="ct">${off ? 'Not watching' : `${n} plane${n === 1 ? '' : 's'}${bits.length ? ' \u00B7 ' + bits.join(' \u00B7 ') : ''}`}</span></span><span class="arr">\u203A</span></div>`;
   }).join('');
   document.querySelectorAll('.brow').forEach(el => el.onclick = () => {
     const r = REGIONS[el.dataset.r]; map.fitBounds(r[1]); showTab('map');
   });
   const s = live ? live.sources || {} : {};
-  $('#srcs').innerHTML = Object.entries(s).map(([k, v]) => `<div><span class="${v.ok ? 'ok' : 'bad'}">\u25CF</span> ${k.toUpperCase()}: ${esc(v.note)}</div>`).join('') +
-    (live ? `<div>NEXT SWEEP: ~every 10 min (GitHub timer)</div>` : '');
+  const SRC = {adsb: 'Plane tracker', news: 'News'};
+  const note = v => String(v || '').replace(/military aircraft/, 'military planes').replace(/(\d+) feeds ok, (\d+) failed, (\d+) headlines/, (_, ok, bad, h) => `${ok} sources working${+bad ? ', ' + bad + ' down' : ''} \u00B7 ${h} headlines`);
+  $('#srcs').innerHTML = Object.entries(s).map(([k, v]) => `<div><span class="${v.ok ? 'ok' : 'bad'}">\u25CF</span> ${SRC[k] || cap(k)}: ${esc(note(v.note))}</div>`).join('') +
+    (live ? `<div>Checks again about every 10 minutes</div>` : '');
 }
 function threatcon() {
   const six = Date.now() / 1000 - 6 * 3600;
@@ -291,25 +306,45 @@ function threatcon() {
 }
 function drawFeed() {
   const list = alerts.filter(a => tierOn === 'ALL' || a.tier === tierOn);
-  $('#feedcount').textContent = `// ${alerts.length} LOGGED`;
+  $('#feedcount').textContent = `// ${alerts.length} saved`;
   if (!list.length) {
-    $('#feed').innerHTML = `<div class="empty">${alerts.length ? 'Nothing in this tier yet.' : 'All quiet. WATCHTOWER is sweeping every ~10 minutes and will log anything worth knowing here.'}</div>`;
+    $('#feed').innerHTML = `<div class="empty">${alerts.length ? 'Nothing like that yet.' : 'All quiet. WATCHTOWER checks about every 10 minutes and will save anything worth knowing here.'}</div>`;
     return;
   }
   $('#feed').innerHTML = list.slice(0, 200).map(a => {
-    const st = a.pushed === 'sent' ? '<span class="p">\u25B2 PUSHED</span>' : a.held ? `<span class="h">HELD: ${esc(a.held)}</span>` : '<span>LOGGED</span>';
+    const st = a.pushed === 'sent' ? `<span class="p">\u2714 Sent to your phone ${tipBtn('sent')}</span>` : a.held ? `<span class="h">${esc(plainHeld(a.held))}</span>` : '<span>Saved here only</span>';
     const links = [];
     if (a.more && a.more.length) a.more.forEach(m => links.push(`<a href="${esc(m.u)}" target="_blank" rel="noopener">\u2197 ${esc(m.t)} <small>(${esc(m.s)})</small></a>`));
-    else if (a.link) links.push(`<a href="${esc(a.link)}" target="_blank" rel="noopener">\u2197 Open source report</a>`);
+    else if (a.link) links.push(`<a href="${esc(a.link)}" target="_blank" rel="noopener">\u2197 Read the news story</a>`);
     const isNew = !seenIds.has(a.id);
+    let det = '';
+    if (a.watch === 'recap') det = `<pre class="tfpre">${esc(plainText(a.body || ''))}</pre>`;
+    else {
+      const pa = parseAssets(a.assets);
+      const rows = [];
+      if (pa.groups.length) rows.push([a.headline ? 'What it\u2019s about' : 'What\u2019s up there', esc(assetsLine(pa.groups)) + idsBox(idsOf(pa.groups))]);
+      const fl = flightLine(pa.f.alt, pa.f.kt, pa.f.trk, a.lat, a.lon);
+      if (fl) rows.push(['How it\u2019s flying', esc(fl)]);
+      if (a.lat != null && a.watch !== 'test') rows.push(['Distance', esc(cap(fromHome(a.lat, a.lon)))]);
+      if (a.response) rows.push(['What it means', esc(plainResponse(a.response))]);
+      if (a.threat) rows.push([`Threat level ${tipBtn('threatlvl')}`, esc(THREATW[a.threat] || cap(String(a.threat).toLowerCase()))]);
+      if (a.source) rows.push(['Where this came from', esc(plainSource(a.source))]);
+      det = rows.map(r => `<div class="drow"><label>${r[0]}</label><div>${r[1]}</div></div>`).join('');
+    }
+    const mapBtn = a.lat != null && a.watch !== 'test' ? `<button class="mapbtn" data-lat="${a.lat}" data-lon="${a.lon}">\u{1F4CD} Show on map</button>` : '';
     return `<div class="alert ${a.tier} ${isNew ? 'new' : ''}" data-id="${esc(a.id)}">` +
-      `<h4>${esc(a.title || (ICON[a.tier] + ' ' + a.tier + ' // ' + a.what))}</h4>` +
+      `<div class="atop">${tierTag(a.tier)} ${TIERW[a.tier] ? tipBtn(a.tier) : ''}<span class="when">${ago(a.ts)}</span></div>` +
+      `<h4>${esc(plainWhat(a.what || a.title))}</h4>` +
       (a.headline ? `<div class="hl">${esc(a.headline)}</div>` : '') +
-      `<div class="meta"><span>${ago(a.ts)}</span><span>\u{1F4CD} ${esc(a.location || '')}</span>${st}</div>` +
-      `<pre>${esc(a.body || '')}</pre><div class="links">${links.join('')}</div></div>`;
+      `<div class="meta"><span>\u{1F4CD} ${esc(plainPlace(a.location, a.region))}</span>${st}</div>` +
+      `<div class="more">${det}<div class="links">${links.join('')}</div>${mapBtn}</div>` +
+      `<div class="tapmore"></div></div>`;
   }).join('');
+  document.querySelectorAll('.alert .mapbtn').forEach(b => b.onclick = ev => {
+    ev.stopPropagation(); showTab('map'); setTimeout(() => map.flyTo([+b.dataset.lat, +b.dataset.lon], 5, {duration: 1}), 80);
+  });
   document.querySelectorAll('.alert').forEach(el => el.onclick = ev => {
-    if (ev.target.closest('a')) return;
+    if (ev.target.closest('a,details,button')) return;
     el.classList.toggle('open'); el.classList.remove('new');
     seenIds.add(el.dataset.id); localStorage.setItem('wr_seen', JSON.stringify([...seenIds].slice(-500)));
     const a = alerts.find(x => x.id === el.dataset.id);
@@ -325,29 +360,36 @@ function ctTime(ts, withDay) {
 }
 function drawTopFinds() {
   const box = $('#topfinds');
-  if (!recap || !recap.today) { box.innerHTML = '<div class="tfempty">The first tally shows up after the next sweep.</div>'; return; }
+  if (!recap || !recap.today) { box.innerHTML = '<div class="tfempty">Today\u2019s tally shows up after the next check.</div>'; return; }
   const t = recap.today, startCT = new Date(t.start * 1000).toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit'});
-  $('#tfsub').textContent = (startCT === '12:00 AM' ? '// TODAY SO FAR' : '// SINCE ' + ctTime(t.start, true).toUpperCase()) +
-    (recap.enabled ? ' \u00B7 RECAP ' + recap.recap_at : ' \u00B7 RECAP OFF');
-  const tiers = t.tiers || {};
-  let html = `<div class="tfstats"><span>${t.sweeps || 0} SWEEPS</span><span>PEAK ${t.peak_total || 0} MIL</span><span class="fl">${ICON.FLASH} ${tiers.FLASH || 0}</span><span class="im">${ICON.IMMEDIATE} ${tiers.IMMEDIATE || 0}</span><span class="ro">${ICON.ROUTINE} ${tiers.ROUTINE || 0}</span></div>`;
+  const rat = String(recap.recap_at || '').replace(':00 ', ' ').replace(/ CT$/, '');
+  $('#tfsub').textContent = (startCT === '12:00 AM' ? '// today so far' : '// since ' + ctTime(t.start, true)) +
+    (recap.enabled ? ' \u00B7 recap at ' + rat : ' \u00B7 recap off');
+  const tiers = t.tiers || {}, sw = t.sweeps || 0;
+  let html = `<div class="tfstats"><div>Checked ${sw} time${sw === 1 ? '' : 's'} today ${tipBtn('checks')}</div>` +
+    `<div>Most military planes seen at once: <b>${t.peak_total || 0}</b> ${tipBtn('peak')}</div>` +
+    `<div class="tft"><span class="fl">${ICON.FLASH} ${tiers.FLASH || 0} urgent</span><span class="im">${ICON.IMMEDIATE} ${tiers.IMMEDIATE || 0} important</span><span class="ro">${ICON.ROUTINE} ${tiers.ROUTINE || 0} FYI</span> ${tipBtn('tiers')}</div></div>`;
   if (!t.top || !t.top.length) html += '<div class="tfempty">Nothing notable yet. All quiet on the watch so far.</div>';
   else {
-    if (t.quiet) html += '<div class="tfnote">No FLASH or IMMEDIATE finds yet. Most notable on the log:</div>';
+    if (t.quiet) html += '<div class="tfnote">Nothing urgent or important yet. The most notable so far:</div>';
     html += t.top.map((f, i) => {
       const when = ctTime(f.first) + ((f.last - f.first) >= 1200 ? '\u2013' + ctTime(f.last) : '');
-      return `<div class="tf ${f.tier}" data-i="${i}"><b class="md">${MEDAL[i]}</b><div><h5>${esc(ICON[f.tier] + ' ' + f.what)}</h5>` +
-        `<div class="tfm">${esc(f.location || '')} \u00B7 ${esc(when)} CT${f.sweeps > 1 ? ' \u00B7 ' + f.sweeps + ' sweeps' : ''}${f.pushed ? ' \u00B7 <span class="p">\u25B2 PUSHED</span>' : ''}</div>` +
-        (f.headline ? `<div class="tfm hl">${esc(f.headline)}</div>` : (f.assets ? `<div class="tfm">${esc(f.assets)}</div>` : '')) + `</div></div>`;
+      const pa = parseAssets(f.assets);
+      return `<div class="tf ${f.tier}" data-i="${i}"><b class="md">${MEDAL[i]}</b><div><div class="atop">${tierTag(f.tier)}</div><h5>${esc(plainWhat(f.what))}</h5>` +
+        `<div class="tfm">\u{1F4CD} ${esc(plainPlace(f.location, f.region))}</div>` +
+        `<div class="tfm">\u{1F550} ${esc(when)}${f.sweeps > 1 ? ' \u00B7 seen on ' + f.sweeps + ' checks' : ''}</div>` +
+        (f.pushed ? `<div class="tfm"><span class="p">\u2714 Sent to your phone</span></div>` : '') +
+        (f.headline ? `<div class="tfm hl">${esc(f.headline)}</div>` : (pa.groups.length ? `<div class="tfm hl">${esc(assetsLine(pa.groups))}</div>${idsBox(idsOf(pa.groups))}` : '')) + `</div></div>`;
     }).join('');
   }
-  if (t.airframes) html += `<div class="tfm af">\u2708\uFE0F ${esc(t.airframes)}</div>`;
+  if (t.airframes) html += `<div class="tfm af">\u2708\uFE0F Special planes spotted today: ${esc(plainAirframes(t.airframes))}</div>`;
   if (recap.last && recap.last.body) {
-    html += `<button class="tflast" id="tfLast">${showLastRecap ? '\u25BE' : '\u25B8'} LAST RECAP \u00B7 ${esc(recap.last.date)}</button>` +
-      (showLastRecap ? `<pre class="tfpre">${esc(recap.last.title + '\n' + recap.last.body)}</pre>` : '');
+    html += `<button class="tflast" id="tfLast">${showLastRecap ? '\u25BE' : '\u25B8'} Last night\u2019s recap \u00B7 ${esc(recap.last.date)}</button>` +
+      (showLastRecap ? `<pre class="tfpre">${esc(plainText(recap.last.title + '\n' + recap.last.body))}</pre>` : '');
   }
   box.innerHTML = html;
-  box.querySelectorAll('.tf').forEach(el => el.onclick = () => {
+  box.querySelectorAll('.tf').forEach(el => el.onclick = ev => {
+    if (ev.target.closest('a,details,button')) return;
     const f = t.top[+el.dataset.i];
     if (f && f.lat != null) { showTab('map'); setTimeout(() => map.flyTo([f.lat, f.lon], 5, {duration: 1}), 80); }
   });
@@ -376,7 +418,7 @@ async function refresh() {
     setBlips(); drawStats(); drawBoard(); drawPlanes(); drawAlertPings(); drawFeed(); drawTopFinds(); threatcon(); tick();
     checkApplied();
   } catch (e) {
-    $('#sysline').textContent = 'NO DATA YET - FIRST SWEEP PENDING';
+    $('#sysline').textContent = 'WAITING FOR THE FIRST CHECK';
     console.warn(e);
   }
 }
@@ -411,7 +453,7 @@ function paint() {
     if (inp.type === 'checkbox') inp.checked = !!v; else inp.value = v || '';
   });
   $('#masterOn').checked = !settings.paused;
-  $('#masterHint').textContent = settings.paused ? 'PAUSED: WATCHTOWER keeps watching and logging, but sends nothing to your phone.' : 'ON: WATCHTOWER pushes the tiers you pick below straight to your phone.';
+  $('#masterHint').textContent = settings.paused ? 'PAUSED: WATCHTOWER keeps watching and saving, but won\u2019t buzz your phone.' : 'ON: WATCHTOWER buzzes your phone for the kinds of alerts you pick below.';
   document.querySelectorAll('#sensSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === settings.sensitivity));
   drawBoard();
 }
@@ -431,7 +473,7 @@ function checkApplied() {
     $('#saveMsg').textContent = '\u2714 WATCHTOWER CONFIRMED YOUR ORDERS (' + new Date(applied.applied * 1000).toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit'}) + ' CT).';
     toast('WATCHTOWER confirmed your orders');
   } else {
-    $('#saveMsg').textContent = 'Orders transmitted. WATCHTOWER locks them in on its next sweep (within ~10 min).';
+    $('#saveMsg').textContent = 'Orders sent. WATCHTOWER switches to them on its next check (within about 10 minutes).';
   }
 }
 async function pullPending() {
@@ -468,7 +510,7 @@ $('#saveBtn').onclick = async () => {
     const m = await r.json();
     dirty = false; pendingSince = m.time || Math.floor(Date.now() / 1000); localStorage.setItem('wr_pending', pendingSince);
     $('#saveMsg').classList.remove('err');
-    $('#saveMsg').textContent = 'Orders transmitted. WATCHTOWER locks them in on its next sweep (within ~10 min).';
+    $('#saveMsg').textContent = 'Orders sent. WATCHTOWER switches to them on its next check (within about 10 minutes).';
     toast('Orders transmitted to WATCHTOWER');
   } catch (e) {
     $('#saveMsg').textContent = 'Could not reach WATCHTOWER. Check your signal and try again.'; $('#saveMsg').classList.add('err');

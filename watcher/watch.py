@@ -863,7 +863,7 @@ def airframe_line(day):
 def recap_summary(day, cfg):
     fs = ranked_finds(day)
     big = [f for f in fs if f["tier"] in ("FLASH", "IMMEDIATE")]
-    top = (big if big else fs)[:RECAP_TOP if big else 3]
+    top = fs[:RECAP_TOP if big else 3]  # ranked: FLASH/IMMEDIATE naturally rise to the top
     pc = day.get("peak_cats", {})
     return {
         "date": day["date"], "start": day.get("start"), "end": NOW_TS, "sweeps": day.get("sweeps", 0),
@@ -891,7 +891,7 @@ def make_recap(s, late=False, test=False):
     t = s["tiers"]
     lines = ["WATCHTOWER END-OF-DAY RECAP" + (" (late)" if late else "") + (" (TEST)" if test else ""),
              f"\U0001F5D3\uFE0F WATCH: {day_time(s['start'])} \u2192 {day_time(s['end'])} CT",
-             f"\U0001F4E1 {s['sweeps']} sweeps \u00B7 peak {s['peak_total']} mil aircraft \u00B7 {s['peak_tankers']} tankers up at once",
+             f"\U0001F4E1 {s['sweeps']} sweep{'' if s['sweeps'] == 1 else 's'} \u00B7 peak {s['peak_total']} mil aircraft \u00B7 {s['peak_tankers']} tankers up at once",
              f"{TIER_ICON['FLASH']} {t.get('FLASH', 0)} FLASH \u00B7 {TIER_ICON['IMMEDIATE']} {t.get('IMMEDIATE', 0)} IMMEDIATE \u00B7 {TIER_ICON['ROUTINE']} {t.get('ROUTINE', 0)} ROUTINE",
              ""]
     if s["quiet"]:

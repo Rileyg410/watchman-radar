@@ -3,7 +3,7 @@
 'use strict';
 
 // ---------------------------------------------------------------- setup
-const TOPIC_HASH = 'f19ce2db454c167d228ebb49b7a15d8639a244af8ed7c447accc8ee61ae5c08f';
+const TOPIC_HASH = '5daa8df05d78ee6b173a1b863c13feb1bcfd489d8b1544c97eeef6c5f3c1edd2';
 const NTFY = 'https://ntfy.sh';
 const HOME = [35.6145, -88.8139]; // home base (Jackson, TN)
 const REFRESH_MS = 60 * 1000;

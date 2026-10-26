@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 <link rel="stylesheet" href="squawk.css?v=7">
 <link rel="stylesheet" href="intel.css?v=3">
 <link rel="stylesheet" href="spice.css?v=1">
@@ -26,7 +26,7 @@
 <script>
 // keep Riley's phone on the newest radar: when a new version is pushed, reload onto it by itself
 (function () {
-  var BUILD = '2026-10-26b'; window.WR_BUILD = BUILD;
+  var BUILD = '2026-10-26c'; window.WR_BUILD = BUILD;
   function check() {
     fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j || !j.build || j.build === BUILD) return;
@@ -70,6 +70,8 @@
     <div class="stats" id="stats"></div>
     <div class="ptitle">AROUND THE WORLD <span>// right now vs. normal</span> <button class="i" data-tip="board">i</button></div>
     <div class="board" id="board"></div>
+    <div class="ptitle">COUNTRIES IN THE AIR <span>// right now</span> <button class="i" data-tip="countries">i</button></div>
+    <div class="cn" id="countries"></div>
     <div class="srcs" id="srcs"></div>
   </section>
 
@@ -215,10 +217,13 @@
 <div class="tip" id="tip" role="tooltip"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="plain.js?v=8"></script>
+<script src="plain.js?v=9"></script>
+<script src="country-data.js?v=1"></script>
+<script src="country.js?v=1"></script>
 <script src="fighters.js?v=1"></script>
-<script src="app.js?v=14"></script>
-<script src="squawk.js?v=6"></script>
+<script src="app.js?v=15"></script>
+<script src="types.js?v=1"></script>
+<script src="squawk.js?v=7"></script>
 <script src="doing.js?v=3"></script>
 <script src="intel.js?v=2"></script>
 <script src="spice.js?v=1"></script>

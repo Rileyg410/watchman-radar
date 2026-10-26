@@ -71,6 +71,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 let live = null, alerts = [], applied = null, recap = null, showLastRecap = false;
 let catOn = new Set(Object.keys(CATS));
 let tierOn = 'ALL';
+let flagsOn = (() => { try { return localStorage.getItem('wr_flags') !== '0'; } catch (e) { return true; } })();
 let settings = clone(DEFAULTS);
 let seenIds = new Set(JSON.parse(localStorage.getItem('wr_seen') || '[]'));
 
@@ -219,8 +220,11 @@ function drawPlanes() {
     // round two: each type gets its own shape (spice.js)
     const wi = window.WRI ? WRI.icon(p, f) : null;
     const s = wi ? wi.size : big ? 26 : fi ? 22 : 18;
+    // which country the plane belongs to (country.js)
+    const co = window.WRC ? WRC.of(p) : null;
+    const flagHtml = co && flagsOn ? `<span class="acflag">${co.flag}</span>` : '';
     const icon = L.divIcon({className: 'ac' + (f ? ' foreign' : '') + (fi ? ' fj' : ''), iconSize: [s, s], iconAnchor: [s / 2, s / 2],
-      html: `<div style="transform:rotate(${p.trk || 0}deg)">${wi ? wi.html : fi ? WRF.svg(f ? '#ff3b3b' : col) : planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
+      html: `<div style="transform:rotate(${p.trk || 0}deg)">${wi ? wi.html : fi ? WRF.svg(f ? '#ff3b3b' : col) : planeSvg(f ? '#ff3b3b' : col, big)}</div>${flagHtml}`});
     const nm = fi ? fi.name : ((window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || 'Unknown type');
     const tk = fi ? WRF.nearTanker(p, live.planes) : null;
     const sq = {'7700': '\u{1F198} Signaling an emergency', '7600': '\u{1F4FB} Reporting radio trouble', '7500': '\u{1F6A8} Sent the hijack code'}[p.sq];
@@ -230,11 +234,14 @@ function drawPlanes() {
     // A US military Boeing 767 is almost always the KC-46 Pegasus refueling plane
     const kc46 = p.t === 'B762' && !f;
     const kindHtml = kc46 ? `Probably a KC-46 tanker ${tipBtn('kc46')}` : fi ? `${esc(cap(fi.role))} ${tipBtn(fi.tip)}` : `${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}`;
+    const note = !fi && !kc46 && window.TYPE_NOTE ? TYPE_NOTE[p.t] : '';
+    const coHtml = co ? `<div class="pc${f ? ' pf' : ''}"><span class="pcf">${co.flag}</span> ${esc(co.label)} ${tipBtn(f ? 'foreign' : 'country')}</div>`
+      : (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '');
     const mk = L.marker([p.lat, p.lon], {icon});
     if (p.hex) markerByHex.set(String(p.hex), mk);
     mk.bindPopup(() =>
       `<div class="pp"><b>${esc(nm)}</b><div class="pk">${kindHtml}</div>` +
-      (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
+      (note ? `<div class="pn">${esc(note)}</div>` : '') + coHtml +
       (sq ? `<div class="pf">${sq}</div>` : '') +
       (tk ? `<div class="pr">\u26FD Possibly refueling with the tanker nearby (${tk.d} mi) ${tipBtn('refuelnear')}</div>` : '') +
       `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +
@@ -268,6 +275,11 @@ function buildChips() {
     b.onclick = () => { catOn.has(k) ? catOn.delete(k) : catOn.add(k); buildChips(); drawPlanes(); };
     cc.appendChild(b);
   }
+  const fb = document.createElement('button');
+  fb.className = 'chip flagchip' + (flagsOn ? ' on' : '');
+  fb.textContent = '\u{1F3F3}\uFE0F Flags';
+  fb.onclick = () => { flagsOn = !flagsOn; try { localStorage.setItem('wr_flags', flagsOn ? '1' : '0'); } catch (e) {} buildChips(); drawPlanes(); };
+  cc.appendChild(fb);
   cc.insertAdjacentHTML('beforeend', tipBtn('cats'));
   const tc = $('#tierchips'); tc.innerHTML = '';
   for (const [k, cls] of [['ALL', ''], ['FLASH', 'fl'], ['IMMEDIATE', 'im'], ['ROUTINE', 'ro']]) {
@@ -304,7 +316,20 @@ function regionLamp(r) {
   if (rs.some(a => a.tier === 'IMMEDIATE')) return 'a';
   return 'g';
 }
+// "Countries in the air": every country with military planes up right now, by flag (country.js)
+function drawCountries() {
+  const el = $('#countries'); if (!el || !window.WRC) return;
+  const n = new Map(); let unk = 0;
+  for (const p of (live && live.planes) || []) {
+    const o = WRC.of(p);
+    if (o.cc) n.set(o.cc, (n.get(o.cc) || 0) + 1); else if (o.label === 'Unknown country') unk++;
+  }
+  const rows = [...n.entries()].sort((a, b) => b[1] - a[1]);
+  el.innerHTML = rows.length ? rows.map(([cc, c]) => `<span class="cnf">${WRC.flag(cc)} ${esc(WRC.name(cc))} <b>${c}</b></span>`).join('') +
+    (unk ? `<span class="cnf">\u{1F3F3}\uFE0F Unknown <b>${unk}</b></span>` : '') : '<span class="cnf">Waiting for the next check\u2026</span>';
+}
 function drawBoard() {
+  try { drawCountries(); } catch (e) { /* never let this break the board */ }
   const bd = live ? live.board || {} : {};
   $('#board').innerHTML = Object.entries(REGIONS).map(([k, v]) => {
     const b = bd[k] || {};
@@ -337,6 +362,16 @@ function threatcon() {
   else if (recent.some(a => a.tier === 'IMMEDIATE')) { el.classList.add('amber'); el.querySelector('b').textContent = 'ELEVATED'; }
   else { el.classList.add('green'); el.querySelector('b').textContent = 'NORMAL'; }
 }
+// which countries' planes an alert is about: saved by WATCHTOWER (a.cc), the alert's own plane, or its plane IDs matched to the map
+function alertCountries(a, pa) {
+  if (!window.WRC) return '';
+  try {
+    if (Array.isArray(a.cc) && a.cc.length) return a.cc.map(cc => WRC.flag(cc) + ' ' + WRC.name(cc)).join(' \u00B7 ');
+    if (a.hex) { const o = WRC.of({hex: a.hex, cs: a.callsign || a.cs, reg: a.reg, t: a.t}); if (o.cc) return o.flag + ' ' + o.label; }
+    const m = WRC.forIds(idsOf((pa || parseAssets(a.assets)).groups), live ? live.planes : []);
+    return m.size ? WRC.line(m) : '';
+  } catch (e) { return ''; }
+}
 function drawFeed() {
   const list = alerts.filter(a => tierOn === 'ALL' || a.tier === tierOn);
   $('#feedcount').textContent = `// ${alerts.length} saved`;
@@ -356,6 +391,8 @@ function drawFeed() {
       const pa = parseAssets(a.assets);
       const rows = [];
       if (pa.groups.length) rows.push([a.headline ? 'What it\u2019s about' : 'What\u2019s up there', esc(assetsLine(pa.groups)) + idsBox(idsOf(pa.groups))]);
+      const cline = alertCountries(a, pa);
+      if (cline) rows.push([`Country ${tipBtn('country')}`, esc(cline)]);
       const fl = flightLine(pa.f.alt, pa.f.kt, pa.f.trk, a.lat, a.lon);
       if (fl) rows.push(['How it\u2019s flying', esc(fl)]);
       if (a.lat != null && a.watch !== 'test') rows.push(['Distance', esc(cap(fromHome(a.lat, a.lon)))]);

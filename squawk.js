@@ -114,6 +114,7 @@ function squawkCard(s, big) {
   return `<article class="nt ${big ? 'hi ' + c.cls : ''}" id="sq-${E(s.id)}" data-id="${E(s.id)}">` +
     `<div class="hd"><div class="em">${c.em}</div><span class="ap">WATCHMAN RADAR</span><span class="tm">${E(agoShort(s.ts))}</span></div>` +
     `<div class="ti"><span class="sq ${c.tag}">${E(s.sq)}</span>${E(c.name)} &middot; ${E(who)}</div>` +
+    (window.WRC && s.hex ? (o => o.cc ? `<div class="bd" style="font-weight:600">${o.flag} ${E(o.label)}</div>` : '')(WRC.of({hex: s.hex, cs: s.cs, reg: s.reg, t: s.type})) : '') +
     `<div class="bd">${E(cap(planeWords(s)))} over ${E(placeWords(s))} ${E(c.verb)}.${big ? ' ' + E(c.why) : ''}</div>` +
     `<div class="more">${status}${tiles([[alt, 'altitude'], [mi == null ? '\u2014' : mi.toLocaleString('en-US') + ' mi', 'from home'], third])}` +
     `<div class="act"><button class="go" data-track="${E(s.id)}">Track it</button><button class="${done ? 'prayed' : ''}" data-pray="${E(s.id)}">${done ? '\u{1F64F} Prayed' : 'Pray'}</button></div>` +

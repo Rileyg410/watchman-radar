@@ -215,6 +215,62 @@ TYPE_NAMES = {
 ISR_CALLSIGNS = ("FORTE", "HOMER", "JAKE", "OLIVE", "COBRA", "SNTRY", "MAGMA", "NCHO")
 
 
+_CC_RANGES = None
+
+
+def country_of(hexcode):
+    """Any country from the ICAO 24-bit address table (watcher/country_ranges.json). None when unknown."""
+    global _CC_RANGES
+    if _CC_RANGES is None:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "country_ranges.json"), encoding="utf-8") as f:
+                _CC_RANGES = json.load(f)["ranges"]
+        except Exception:
+            _CC_RANGES = []
+    try:
+        s = str(hexcode or "")
+        if not s or s.startswith("~"):
+            return None
+        h = int(s, 16)
+    except Exception:
+        return None
+    for a, b, cc in _CC_RANGES:
+        if a <= h <= b:
+            return cc
+    return None
+
+
+def tag_countries(alerts, planes):
+    """Add a['cc'] = the countries of the planes an alert is about (most planes first)."""
+    by = {}
+    for p in planes:
+        for k in (p.get("cs"), p.get("reg"), p.get("hex")):
+            if k:
+                by.setdefault(str(k), p)
+    for a in alerts:
+        if not isinstance(a, dict) or a.get("cc"):
+            continue
+        counts = {}
+        hexes = []
+        if a.get("hex"):
+            hexes.append(a["hex"])
+        main = str(a.get("assets") or "").split(" | ")[0]
+        for part in main.split("; "):
+            m = re.match(r"^\d+x .+? \((.*)\)$", part.strip())
+            if not m:
+                continue
+            for i in m.group(1).split(", "):
+                p = by.get(i.strip())
+                if p and p.get("hex"):
+                    hexes.append(p["hex"])
+        for h in hexes:
+            cc = country_of(h)
+            if cc:
+                counts[cc] = counts.get(cc, 0) + 1
+        if counts:
+            a["cc"] = sorted(counts, key=lambda c: -counts[c])
+
+
 def nation_of(hexcode):
     try:
         h = int(hexcode.strip("~"), 16)
@@ -1278,6 +1334,11 @@ def main():
     except Exception as e:
         print("intel error:", type(e).__name__, e)
 
+    try:  # which countries' planes each alert is about (shown on the alert cards); never breaks alerts
+        tag_countries(candidates, planes or [])
+    except Exception as e:
+        print("country tag error:", type(e).__name__, e)
+
     last = state.setdefault("last_alert", {})
     new_alerts = []
     for a in candidates:
@@ -1344,7 +1405,7 @@ def main():
 
     keep = ("id", "ts", "tier", "what", "title", "body", "headline", "location", "assets", "response",
             "source", "threat", "region", "lat", "lon", "link", "more", "pushed", "held", "watch", "count",
-            "sq", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "nat", "route")
+            "sq", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "nat", "route", "cc")
     try:
         recap_entries = run_recap(state, cfg, planes, candidates, new_alerts, log)
     except Exception as e:  # the recap must never break the regular alerts

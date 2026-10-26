@@ -75,6 +75,8 @@ const KIND = [
   [/Boeing|Airbus|Gulfstream|Global|Citation|Hawker|Falcon|King Air/i, 'transport or VIP plane'],
   [/Cessna|Piper|Twin Otter/i, 'small prop plane'], [/Ground station/i, 'ground station, not a plane']];
 function kindOf(type, cat) {
+  const tk = window.TYPE_KIND_OF && window.TYPE_KIND_OF(type); // types.js: plain names for types not covered below
+  if (tk) return tk;
   for (const [rx, k] of KIND) if (rx.test(type || '')) return k;
   return CATK[cat] || 'military plane';
 }
@@ -225,6 +227,8 @@ const TIPS = {
   sent: 'WATCHTOWER buzzed your phone about this through the ntfy app.',
   threatlvl: 'Low = normal. Raised = worth keeping an eye on. High = something serious.',
   foreign: 'Military planes from Russia, China, Iran, Cuba or North Korea that show up on the tracker.',
+  country: 'Every plane\u2019s transponder has an address, and each country is given its own block of addresses. That, plus its call sign and tail number, tells which country (and for US planes, which branch) it belongs to.',
+  countries: 'Which countries\u2019 military planes are in the air right now, counted from each plane\u2019s transponder address.',
   sens: 'LOW = only buzz for big moves. NORMAL = in between. HIGH = buzz for smaller changes too.',
 };
 

@@ -23,6 +23,24 @@
 <link rel="stylesheet" href="spice.css?v=1">
 <link rel="stylesheet" href="verse.css?v=1">
 <script>window.WR_THEME = 'silver';</script>
+<script>
+// keep Riley's phone on the newest radar: when a new version is pushed, reload onto it by itself
+(function () {
+  var BUILD = '2026-10-26a'; window.WR_BUILD = BUILD;
+  function check() {
+    fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.build || j.build === BUILD) return;
+      if (document.querySelector('#cmd.open')) return; // never yank COMMAND out from under him
+      var k = 'wr_reloaded_' + j.build;
+      try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) { /* ignore */ }
+      location.replace(location.pathname + '?b=' + encodeURIComponent(j.build) + location.hash);
+    }).catch(function () {});
+  }
+  window.addEventListener('load', function () { setTimeout(check, 1500); });
+  setInterval(check, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
+})();
+</script>
 </head>
 <body>
 <div class="scanlines"></div>

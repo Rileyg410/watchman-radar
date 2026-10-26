@@ -18,6 +18,11 @@ UK Defence Journal, Jerusalem Post).
 
 Tiers: FLASH (urgent push), IMMEDIATE (high push), ROUTINE (logged; optional quiet push).
 
+## Pushing a new version
+Bump the build string in `version.json`, in the small script at the top of `index.html` and in `sw.js`
+(all three the same). Open radars see the new build within 5 minutes (or the moment the app is reopened)
+and reload onto it by themselves.
+
 ## Keep it running
 GitHub pauses scheduled workflows in a public repo after 60 days with no repository activity.
 If that ever happens, open the **Actions** tab and press **Enable workflow**.

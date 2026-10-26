@@ -209,6 +209,7 @@ const TIPS = {
   FLASH: 'URGENT (called FLASH on your phone alerts): the biggest stuff, like nuclear drills, missile tests, or foreign bombers or warships near the US or Europe.',
   IMMEDIATE: 'IMPORTANT (called IMMEDIATE on your phone alerts): something unusual building up, like way more refueling or cargo planes than normal.',
   ROUTINE: 'FYI (called ROUTINE on your phone alerts): normal activity the radar writes down. It only buzzes you if you turn that on.',
+  kc46: 'The US Air Force\'s KC-46 Pegasus refueling plane is built on the Boeing 767, so a US military 767 is very likely one, a flying gas station for other jets.',
   tanker: 'Refueling planes (like the KC-135) are flying gas stations that top off other jets in midair. A lot at once can mean a big mission.',
   airlift: 'Big cargo planes (like the C-17) carry troops, vehicles and supplies. A bunch in one place can mean a buildup.',
   tactical: 'C-130s are smaller cargo planes for shorter trips, carrying troops and supplies.',

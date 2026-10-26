@@ -179,6 +179,12 @@ const BmSwitch = L.Control.extend({options: {position: 'topright'}, onAdd() {
 }});
 new BmSwitch().addTo(map);
 setBasemap(baseKey);
+// While a plane's info box is open, fade the map buttons away so they never cover it.
+// They fade back in when the box is closed or he taps the map somewhere else.
+let openPop = null;
+function syncPopUi() { document.getElementById('map').classList.toggle('pop-open', !!openPop); }
+map.on('popupopen', e => { openPop = e.popup; syncPopUi(); });
+map.on('popupclose', e => { if (openPop === e.popup) openPop = null; setTimeout(syncPopUi, 0); });
 window.wrMap = map;
 const regionLayer = L.layerGroup().addTo(map), acLayer = L.layerGroup().addTo(map), alertLayer = L.layerGroup().addTo(map);
 for (const [k, v] of Object.entries(REGIONS)) {
@@ -206,10 +212,13 @@ function drawPlanes() {
     const ids = [p.cs, p.reg].filter(Boolean);
     const cat = CATS[p.cat] ? p.cat : 'other';
     const over = REGIONS[p.rg] ? REGIONS[p.rg][0] : 'open water';
+    // A US military Boeing 767 is almost always the KC-46 Pegasus refueling plane
+    const kc46 = p.t === 'B762' && !f;
+    const kindHtml = kc46 ? `Probably a KC-46 tanker ${tipBtn('kc46')}` : `${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}`;
     const mk = L.marker([p.lat, p.lon], {icon});
     if (p.hex) markerByHex.set(String(p.hex), mk);
     mk.bindPopup(() =>
-      `<div class="pp"><b>${esc(nm)}</b><div class="pk">${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}</div>` +
+      `<div class="pp"><b>${esc(nm)}</b><div class="pk">${kindHtml}</div>` +
       (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
       (sq ? `<div class="pf">${sq}</div>` : '') +
       `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +

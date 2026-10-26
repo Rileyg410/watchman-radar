@@ -67,6 +67,9 @@ h1 span{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.4)}
 .bmswitch button{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--g);background:#04140c;border:0;border-left:1px solid var(--line2);padding:7px 9px;cursor:pointer}
 .bmswitch button:first-child{border-left:0}
 .bmswitch button.on{background:var(--g);color:#001a0c;font-weight:700}
+/* fade the map buttons away while a plane's info box is open */
+.bmswitch,.ixlayers{transition:opacity .25s ease,visibility .25s}
+#map.pop-open .bmswitch,#map.pop-open .ixlayers{opacity:0;visibility:hidden;pointer-events:none}
 .bm-terrain .leaflet-interactive[stroke="#39ff8f"],.bm-satellite .leaflet-interactive[stroke="#39ff8f"]{stroke:#00a651;stroke-opacity:.7}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#04140c;color:var(--txt);border:1px solid var(--g2);border-radius:0;box-shadow:0 0 18px rgba(57,255,143,.3)}
 .leaflet-popup-content{font-family:var(--mono);font-size:12px;margin:10px 12px;line-height:1.5}

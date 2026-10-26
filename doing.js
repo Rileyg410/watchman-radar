@@ -104,7 +104,14 @@ function neighbors(p, planes, roleFn, myRole) {
 }
 
 function doing(p, planes, M, ts) {
-  const R = roleOf(p, M), role = R.role, bh = p.bh || {};
+  const R = roleOf(p, M), role = R.role;
+  let bh = p.bh || {};
+  // no map lookup on this plane yet (older data or a lookup hiccup): use the radar's region name, never guess "ocean"
+  if (!bh.over && !bh.sea && !bh.coast && !bh.near && (!p.bh || bh.err)) {
+    const RG = (window.WR && WR.REGIONS) || {};
+    const rg = RG[p.rg] ? String(RG[p.rg][0]).replace(/^Mainland US$/, 'the mainland US') : '';
+    bh = Object.assign({}, bh, {over: rg || 'the area'});
+  }
   const roleFn = q => roleOf(q, M);
   const alt = p.alt, gs = p.gs, trk = p.trk;
   const vr = p.vr != null ? p.vr : bh.climb ? bh.climb : bh.sink ? -bh.sink : null;

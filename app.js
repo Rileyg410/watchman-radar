@@ -612,7 +612,7 @@ function trackPlane(hex, lat, lon, label) {
     map.flyTo([lat, lon], 7, {duration: 1}); setTimeout(() => trackPin && trackPin.openPopup(), 1100);
   }, 80);
 }
-const WR = window.WR = {hooks: [], drawPlanes, DATA, getJSON, showTab, trackPlane, toast, ago, map,
+const WR = window.WR = {hooks: [], drawPlanes, REGIONS, DATA, getJSON, showTab, trackPlane, toast, ago, map,
   get live() { return live; }, get alerts() { return alerts; }, get lastTab() { return lastTab; }};
 
 // ---------------------------------------------------------------- go

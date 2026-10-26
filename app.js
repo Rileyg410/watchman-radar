@@ -204,23 +204,27 @@ function drawPlanes() {
     if (!catOn.has(p.cat)) continue;
     shown++;
     const col = (CATS[p.cat] || CATS.other).c, big = ['bomber', 'tanker', 'c2'].includes(p.cat), f = p.nat && p.nat !== 'US';
-    const s = big ? 26 : 18;
-    const icon = L.divIcon({className: 'ac' + (f ? ' foreign' : ''), iconSize: [s, s], iconAnchor: [s / 2, s / 2],
-      html: `<div style="transform:rotate(${p.trk || 0}deg)">${planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
-    const nm = (window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || 'Unknown type';
+    // Fighter jets get their own swept-wing fighter icon
+    const fi = (p.cat === 'fighter' && window.WRF) ? WRF.info(p) : null;
+    const s = big ? 26 : fi ? 22 : 18;
+    const icon = L.divIcon({className: 'ac' + (f ? ' foreign' : '') + (fi ? ' fj' : ''), iconSize: [s, s], iconAnchor: [s / 2, s / 2],
+      html: `<div style="transform:rotate(${p.trk || 0}deg)">${fi ? WRF.svg(f ? '#ff3b3b' : col) : planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
+    const nm = fi ? fi.name : ((window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || 'Unknown type');
+    const tk = fi ? WRF.nearTanker(p, live.planes) : null;
     const sq = {'7700': '\u{1F198} Signaling an emergency', '7600': '\u{1F4FB} Reporting radio trouble', '7500': '\u{1F6A8} Sent the hijack code'}[p.sq];
     const ids = [p.cs, p.reg].filter(Boolean);
     const cat = CATS[p.cat] ? p.cat : 'other';
     const over = REGIONS[p.rg] ? REGIONS[p.rg][0] : 'open water';
     // A US military Boeing 767 is almost always the KC-46 Pegasus refueling plane
     const kc46 = p.t === 'B762' && !f;
-    const kindHtml = kc46 ? `Probably a KC-46 tanker ${tipBtn('kc46')}` : `${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}`;
+    const kindHtml = kc46 ? `Probably a KC-46 tanker ${tipBtn('kc46')}` : fi ? `${esc(cap(fi.role))} ${tipBtn(fi.tip)}` : `${esc(cap(kindOf(nm, cat)))} ${tipBtn(cat)}`;
     const mk = L.marker([p.lat, p.lon], {icon});
     if (p.hex) markerByHex.set(String(p.hex), mk);
     mk.bindPopup(() =>
       `<div class="pp"><b>${esc(nm)}</b><div class="pk">${kindHtml}</div>` +
       (f ? `<div class="pf">${esc(NATN[p.nat] || p.nat)} military ${tipBtn('foreign')}</div>` : '') +
       (sq ? `<div class="pf">${sq}</div>` : '') +
+      (tk ? `<div class="pr">\u26FD Possibly refueling with the tanker nearby (${tk.d} mi) ${tipBtn('refuelnear')}</div>` : '') +
       `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +
       `<div class="pm">Over ${esc(over)} \u00B7 ${esc(fromHome(p.lat, p.lon))}</div>` +
       (ids.length ? `<details class="ids"><summary>Plane ID ${tipBtn('planeid')}</summary><div>${ids.map(esc).join(' &middot; ')}</div></details>` : '') +
@@ -240,7 +244,7 @@ function drawAlertPings() {
     L.marker([a.lat, a.lon], {icon, interactive: false}).addTo(alertLayer);
   }
 }
-window.TYPE_NAMES = {K35R: 'KC-135R', K35E: 'KC-135E', K46: 'KC-46A', KC46: 'KC-46A', B52: 'B-52', B1: 'B-1B', B2: 'B-2', C17: 'C-17', C5M: 'C-5M', C5: 'C-5', C130: 'C-130', C30J: 'C-130J', R135: 'RC-135', E3TF: 'E-3 AWACS', E3CF: 'E-3 AWACS', P8: 'P-8 Poseidon', E6: 'E-6B Mercury', E4B: 'E-4B', RQ4: 'RQ-4', Q4: 'RQ-4', GLHK: 'RQ-4', MQ9: 'MQ-9', A400: 'A400M', F35: 'F-35', F16: 'F-16', F15: 'F-15', F18S: 'F/A-18', F22: 'F-22', EUFI: 'Typhoon', H60: 'Black Hawk', H47: 'Chinook', V22: 'V-22 Osprey', TEX2: 'T-6 Texan II', HAWK: 'T-45 Goshawk', T38: 'T-38 Talon', TUCA: 'Tucano', B737: 'Boeing 737', B736: 'Boeing 737', B738: 'Boeing 737', B762: 'Boeing 767', A332: 'Airbus A330', A319: 'Airbus A319', GLF5: 'Gulfstream jet', GL5T: 'Global 5000 jet', C560: 'Citation jet', H25B: 'Hawker jet', F2TH: 'Falcon 2000 jet', BE20: 'King Air', BE9L: 'King Air', AS65: 'Dolphin helicopter', EC45: 'Lakota helicopter', A119: 'Koala helicopter', C27J: 'C-27J Spartan', E390: 'KC-390', P28A: 'Piper Cherokee', C172: 'Cessna 172', DHC6: 'Twin Otter', TWR: 'Ground station'};
+window.TYPE_NAMES = {K35R: 'KC-135R', K35E: 'KC-135E', K46: 'KC-46A', KC46: 'KC-46A', B52: 'B-52', B1: 'B-1B', B2: 'B-2', C17: 'C-17', C5M: 'C-5M', C5: 'C-5', C130: 'C-130', C30J: 'C-130J', R135: 'RC-135', E3TF: 'E-3 AWACS', E3CF: 'E-3 AWACS', P8: 'P-8 Poseidon', E6: 'E-6B Mercury', E4B: 'E-4B', RQ4: 'RQ-4', Q4: 'RQ-4', GLHK: 'RQ-4', MQ9: 'MQ-9', A400: 'A400M', F35: 'F-35 Lightning II', F16: 'F-16 Fighting Falcon', F15: 'F-15 Eagle', F18S: 'F/A-18 Super Hornet', F18H: 'F/A-18 Hornet', F22: 'F-22 Raptor', EUFI: 'Eurofighter Typhoon', RFAL: 'Rafale', SB39: 'Gripen', GRIF: 'Gripen', TOR: 'Tornado', A10: 'A-10 Warthog', F5: 'F-5 Tiger II', MIR2: 'Mirage 2000', PC21: 'PC-21 trainer', PC7: 'PC-7 trainer', PC9: 'PC-9 trainer', T6: 'T-6 Texan II', M346: 'M-346 trainer', L39: 'L-39 trainer', H60: 'Black Hawk', H47: 'Chinook', V22: 'V-22 Osprey', TEX2: 'T-6 Texan II', HAWK: 'T-45 Goshawk', T38: 'T-38 Talon', TUCA: 'Tucano', B737: 'Boeing 737', B736: 'Boeing 737', B738: 'Boeing 737', B762: 'Boeing 767', A332: 'Airbus A330', A319: 'Airbus A319', GLF5: 'Gulfstream jet', GL5T: 'Global 5000 jet', C560: 'Citation jet', H25B: 'Hawker jet', F2TH: 'Falcon 2000 jet', BE20: 'King Air', BE9L: 'King Air', AS65: 'Dolphin helicopter', EC45: 'Lakota helicopter', A119: 'Koala helicopter', C27J: 'C-27J Spartan', E390: 'KC-390', P28A: 'Piper Cherokee', C172: 'Cessna 172', DHC6: 'Twin Otter', TWR: 'Ground station'};
 
 // ---------------------------------------------------------------- chips
 function buildChips() {

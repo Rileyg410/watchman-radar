@@ -189,8 +189,13 @@ TACTICAL_LIFT = {"C130", "C30J", "E390", "C27J", "C295", "CN35"}
 ISR = {"R135", "E3TF", "E3CF", "E3", "E8", "E7WW", "E737", "P8", "P3", "EP3", "U2",
        "RQ4", "GLHK", "Q4", "MQ9", "E2", "A50", "IL20", "IL38", "TU14"}
 NUKE_C2 = {"E6", "E4", "E4B"}
-FIGHTERS = {"F15", "F16", "F18", "F18S", "F22", "F35", "EUFI", "RFAL", "GRIF", "SU27", "SU30",
-            "SU35", "MG29", "MG31", "F14", "A10", "HAWK", "T38", "TEX2", "T6", "M346", "PC21"}
+# Real fighter / attack jet type codes, as the adsb.lol database writes them.
+# (Trainers like the T-6, T-38, T-45 and PC-21 used to sit here; they now count as "other".)
+# Careful: FA50 in the database is the Dassault Falcon 50 business jet, not a fighter.
+FIGHTERS = {"F15", "F15E", "F15X", "F16", "F18", "F18H", "F18S", "E18G", "EA18", "F22", "F35", "F117",
+            "F14", "F4", "F5", "F104", "A10", "AV8B", "HAR", "EUFI", "RFAL", "GRIF", "SB39", "JAS39",
+            "TOR", "MIR2", "M2000", "MRF1", "KFIR", "TEJS", "JF17", "J10", "J11", "J15", "J16", "J20",
+            "SU24", "SU25", "SU27", "SU30", "SU33", "SU34", "SU35", "SU57", "MG21", "MG23", "MG29", "MG31", "AMX"}
 TYPE_NAMES = {
     "K35R": "KC-135R", "K35E": "KC-135E", "K46": "KC-46A", "KC46": "KC-46A", "KC10": "KC-10",
     "DC10": "KC-10", "B52": "B-52", "B1": "B-1B", "B2": "B-2", "B21": "B-21", "TU95": "Tu-95",
@@ -200,6 +205,11 @@ TYPE_NAMES = {
     "E3CF": "E-3", "E8": "E-8", "P8": "P-8", "P3": "P-3", "EP3": "EP-3", "U2": "U-2",
     "RQ4": "RQ-4", "GLHK": "RQ-4", "Q4": "RQ-4", "MQ9": "MQ-9", "E6": "E-6B", "E4": "E-4B",
     "E4B": "E-4B", "A50": "A-50", "IL20": "Il-20", "IL38": "Il-38", "E7WW": "E-7", "E737": "E-7",
+    "F15": "F-15", "F15E": "F-15E", "F15X": "F-15EX", "F16": "F-16", "F18": "F/A-18", "F18H": "F/A-18 Hornet",
+    "F18S": "F/A-18 Super Hornet", "E18G": "EA-18G", "EA18": "EA-18G", "F22": "F-22", "F35": "F-35",
+    "A10": "A-10", "AV8B": "AV-8B Harrier", "HAR": "Harrier", "EUFI": "Typhoon", "RFAL": "Rafale",
+    "GRIF": "Gripen", "SB39": "Gripen", "JAS39": "Gripen", "TOR": "Tornado", "MIR2": "Mirage 2000",
+    "F5": "F-5", "SU27": "Su-27", "SU30": "Su-30", "SU34": "Su-34", "SU35": "Su-35", "MG29": "MiG-29", "MG31": "MiG-31",
 }
 ISR_CALLSIGNS = ("FORTE", "HOMER", "JAKE", "OLIVE", "COBRA", "SNTRY", "MAGMA", "NCHO")
 
@@ -227,7 +237,7 @@ def nation_of(hexcode):
 NATION_NAME = {"RU": "RUSSIAN", "CN": "CHINESE", "IR": "IRANIAN", "CU": "CUBAN", "KP": "NORTH KOREAN"}
 
 
-def classify(t, callsign):
+def classify(t, callsign, emitter=None):
     t = (t or "").upper()
     cs = (callsign or "").upper()
     if t in NUKE_C2:
@@ -244,7 +254,44 @@ def classify(t, callsign):
         return "tactical"
     if t in FIGHTERS:
         return "fighter"
+    # No type on file, but the transponder says "high performance" (ADS-B emitter category A6:
+    # faster than 400 knots and able to pull more than 5 G). That is almost always a fighter.
+    if not t and (emitter or "").upper() == "A6":
+        return "fighter"
     return "other"
+
+
+def plane_row(a):
+    lat, lon = a.get("lat"), a.get("lon")
+    if lat is None:
+        lat, lon = a.get("rr_lat"), a.get("rr_lon")
+    if lat is None or lon is None:
+        return None
+    alt = a.get("alt_baro")
+    if alt == "ground":
+        alt = 0
+    cs = (a.get("flight") or "").strip()
+    t = (a.get("t") or "").upper()
+    emitter = a.get("category") or ""
+    cat = classify(t, cs, emitter)
+    row = {
+        "hex": a.get("hex"), "cs": cs, "t": t, "reg": a.get("r") or "",
+        "lat": round(lat, 3), "lon": round(lon, 3),
+        "alt": alt if isinstance(alt, (int, float)) else None,
+        "gs": round(a["gs"]) if isinstance(a.get("gs"), (int, float)) else None,
+        "trk": round(a["track"]) if isinstance(a.get("track"), (int, float)) else None,
+        "vr": round(a.get("baro_rate") if isinstance(a.get("baro_rate"), (int, float)) else a["geom_rate"]) if isinstance(a.get("baro_rate"), (int, float)) or isinstance(a.get("geom_rate"), (int, float)) else None,
+        "sq": a.get("squawk") or "", "cat": cat, "rg": region_of(lat, lon),
+        "nat": nation_of(a.get("hex") or ""),
+    }
+    if cat == "fighter" and not t:
+        row["fg"] = 1  # fighter guessed from the "high performance" flag, type unknown
+    return row
+
+
+# Extra looks around the hottest spots: fighters whose transponder is not in the military
+# list (so /v2/mil misses them) but who share a fighter type or the high-performance flag.
+FIGHTER_SPOTS = ((32.0, 35.0), (26.5, 53.5))  # Israel & the Eastern Med, Persian Gulf & Hormuz
 
 
 def pull_aircraft():
@@ -252,27 +299,23 @@ def pull_aircraft():
     d = json.loads(raw)
     out = []
     for a in d.get("ac", []):
-        lat, lon = a.get("lat"), a.get("lon")
-        if lat is None:
-            lat, lon = a.get("rr_lat"), a.get("rr_lon")
-        if lat is None or lon is None:
+        row = plane_row(a)
+        if row:
+            out.append(row)
+    seen = {r["hex"] for r in out}
+    for la, lo in FIGHTER_SPOTS:
+        try:
+            time.sleep(1)
+            pd = json.loads(http_get(f"https://api.adsb.lol/v2/point/{la}/{lo}/250", timeout=15))
+        except Exception:
             continue
-        alt = a.get("alt_baro")
-        if alt == "ground":
-            alt = 0
-        cs = (a.get("flight") or "").strip()
-        t = (a.get("t") or "").upper()
-        cat = classify(t, cs)
-        out.append({
-            "hex": a.get("hex"), "cs": cs, "t": t, "reg": a.get("r") or "",
-            "lat": round(lat, 3), "lon": round(lon, 3),
-            "alt": alt if isinstance(alt, (int, float)) else None,
-            "gs": round(a["gs"]) if isinstance(a.get("gs"), (int, float)) else None,
-            "trk": round(a["track"]) if isinstance(a.get("track"), (int, float)) else None,
-            "vr": round(a.get("baro_rate") if isinstance(a.get("baro_rate"), (int, float)) else a["geom_rate"]) if isinstance(a.get("baro_rate"), (int, float)) or isinstance(a.get("geom_rate"), (int, float)) else None,
-            "sq": a.get("squawk") or "", "cat": cat, "rg": region_of(lat, lon),
-            "nat": nation_of(a.get("hex") or ""),
-        })
+        for a in pd.get("ac", []):
+            if a.get("hex") in seen:
+                continue
+            row = plane_row(a)
+            if row and row["cat"] == "fighter":
+                out.append(row)
+                seen.add(row["hex"])
     return out
 
 

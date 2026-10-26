@@ -221,7 +221,7 @@ input[type=text],#topicIn,input[type=time]{background:#000;border:1px solid var(
 .brow .ct{white-space:normal}
 .stat label{display:flex;align-items:center}
 .pp{font-family:var(--ui);font-size:15px;line-height:1.45}
-.pp>b{font-size:16px} .pp .pk{color:var(--txt);display:flex;align-items:center} .pp .pf{color:var(--flash);display:flex;align-items:center} .pp .pm{color:var(--mut);margin-top:2px}
+.pp>b{font-size:16px} .pp .pk{color:var(--txt);display:flex;align-items:center} .pp .pf{color:var(--flash);display:flex;align-items:center} .pp .pm{color:var(--mut);margin-top:2px} .pp .pr{color:#ffb000;display:flex;align-items:center;gap:2px}
 .pp a{color:#3ba7ff!important;display:inline-block;margin-top:6px}
 .tfstats div{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .tfstats b{color:var(--g)}

@@ -69,8 +69,8 @@ const KIND = [
   [/^KC-|^K35|^KC10|MRTT|^A39M/i, 'refueling plane'], [/^C-17|^C-5|^A400M|^C-2\b/i, 'big cargo plane'],
   [/^C-130/i, 'small cargo plane'], [/^B-52|^B-1|^B-2|^TU-|^H-6/i, 'bomber'], [/^E-6|^E-4/i, 'nuclear command plane'],
   [/^E-3|^E-7|AWACS/i, 'flying radar plane'], [/^P-8|^P-3|Poseidon/i, 'sub-hunting plane'],
-  [/^RC-135|^RQ-4|^MQ-9|^U-2/i, 'spy plane'], [/^F-\d|^F\/A|Typhoon/i, 'fighter jet'],
-  [/Black Hawk|Chinook|helicopter|^H60|^H47/i, 'helicopter'], [/Texan|Goshawk|Talon|Tucano|^T-/i, 'training plane'],
+  [/^RC-135|^RQ-4|^MQ-9|^U-2/i, 'spy plane'], [/^F-\d|^F\/A|^EA-18|^A-10|^AV-8|Typhoon|Rafale|Gripen|Tornado|Harrier|Mirage|^Su-|^MiG-/i, 'fighter jet'],
+  [/Black Hawk|Chinook|helicopter|^H60|^H47/i, 'helicopter'], [/Texan|Goshawk|Talon|Tucano|trainer|^T-/i, 'training plane'],
   [/^KC-390/i, 'cargo & refueling plane'], [/^C-27/i, 'small cargo plane'],
   [/Boeing|Airbus|Gulfstream|Global|Citation|Hawker|Falcon|King Air/i, 'transport or VIP plane'],
   [/Cessna|Piper|Twin Otter/i, 'small prop plane'], [/Ground station/i, 'ground station, not a plane']];
@@ -202,7 +202,7 @@ const TIPS = {
   scope: 'Jackson is the dot in the middle. The farther out a blip is, the farther away the plane is. The whole world fits inside the circle.',
   board: 'Green light = calm. Orange = an Important alert there today. Red = an Urgent alert there today. A \u25B2 means more than double the usual.',
   map: 'Every military plane sharing its location right now. Tap a plane to see what it is. Tap the colored buttons to hide or show a kind of plane.',
-  cats: 'Refueling = flying gas stations for other jets. Big cargo = haul troops & gear (C-17). Small cargo = C-130s. Spy = planes that watch and listen. Nuclear command = keep the President linked to nuclear forces.',
+  cats: 'Refueling = flying gas stations for other jets. Big cargo = haul troops & gear (C-17). Small cargo = C-130s. Spy = planes that watch and listen. Nuclear command = keep the President linked to nuclear forces. Fighters = combat jets like the F-35 and F-16.',
   topfinds: 'The biggest things the radar noticed today, most important on top. Every night at recap time this list comes to your phone.',
   feed: 'Everything WATCHTOWER noticed, newest first. Tap a card to open it.',
   tiers: 'URGENT (FLASH) = the biggest stuff, like nuclear drills or foreign bombers near the US. IMPORTANT (IMMEDIATE) = unusual buildups. FYI (ROUTINE) = normal activity it writes down.',
@@ -216,8 +216,8 @@ const TIPS = {
   isr: 'Spy & surveillance planes watch and listen from the sky, like the RC-135 and the P-8 that hunts submarines.',
   c2: 'Nuclear command planes keep the President connected to nuclear forces if the ground is knocked out. The E-6B and the E-4B "doomsday plane" are this kind. They fly for training a lot too.',
   bomber: 'Big long-range planes that carry heavy bombs, like the B-52.',
-  fighter: 'Fast combat jets, like the F-35 and F-16.',
-  other: 'Military planes that are not in the other groups, like VIP jets and helicopters.',
+  fighter: 'Fast combat jets, like the F-35, F-16, F-15 and Super Hornet. Many fly with their location turned off, so they show up less often than other planes.',
+  other: 'Military planes that are not in the other groups, like VIP jets, helicopters and training jets.',
   total: 'Every military plane sharing its location right now, all over the world.',
   planeid: 'The radio name each plane uses (its call sign). RCH means an Air Force cargo flight. Handy for looking a plane up.',
   checks: 'Each check, WATCHTOWER looks at every military plane sharing its location plus the latest news headlines.',
@@ -237,7 +237,7 @@ const TIPS = {
     if (tipFor === btn) { hideTip(); return; }
     const t = el();
     tipFor = btn;
-    t.textContent = TIPS[btn.dataset.tip] || '';
+    t.textContent = TIPS[btn.dataset.tip] || (window.TIPS_EXTRA || {})[btn.dataset.tip] || '';
     t.classList.add('on');
     const r = btn.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
     const w = Math.min(320, vw - 24);

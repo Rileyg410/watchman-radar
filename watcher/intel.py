@@ -97,7 +97,8 @@ def decode(cs, t, cat=None):
     word = re.match(r"[A-Z]+", cs)
     word = word.group(0) if word else ""
     best = None
-    for pre, m, u, d in M.get("callsigns", []):
+    for row in M.get("callsigns", []):
+        pre, m, u, d = row[:4]
         if word == pre or (len(pre) >= 3 and word.startswith(pre) and len(word) <= len(pre) + 1):
             if not best or len(pre) > len(best[0]):
                 best = (pre, m, u, d)

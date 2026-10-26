@@ -73,7 +73,10 @@
 .ixbtnh{border-color:rgba(var(--k39ff8frgb,57,255,143),.5)!important;color:var(--k9fffc9,#9fffc9)!important}
 /* popup extras */
 .ixmis{margin:6px 0;padding:7px 8px;border-radius:8px;background:rgba(var(--k39ff8frgb,57,255,143),.08);font-size:12px;line-height:1.35}
-.ixmis span{color:var(--k9fd8b7,#9fd8b7)}.ixmis i{color:var(--kcfeedd,#cfeedd)}.ixmis small{color:var(--k6fbf93,#6fbf93)}
+.ixmis span{color:var(--k9fd8b7,#9fd8b7)}.ixmis i{color:var(--kcfeedd,#cfeedd)}.ixmis small{display:block;margin-top:4px;color:var(--k6fbf93,#6fbf93)}
+.ixmis .pdo{margin-top:6px;padding:6px 7px;border-left:3px solid var(--k39ff8f,#39ff8f);border-radius:6px;background:rgba(var(--k39ff8frgb,57,255,143),.10);color:var(--ke6fff1,#e6fff1);font-size:13px;line-height:1.4}
+.ixmis .pdo em{font-style:normal;font-weight:800;color:var(--k39ff8f,#39ff8f);letter-spacing:.02em}
+.ixmis .pdw{margin-top:4px;color:var(--kb9f5d0,#b9f5d0);font-size:12px;line-height:1.4}
 .ixatc{display:block;margin:4px 0;font-size:12px;color:var(--k39ff8f,#39ff8f)!important}
 /* map layer toggles */
 .ixlayers{display:flex;flex-direction:column;gap:4px}

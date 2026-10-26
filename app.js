@@ -198,6 +198,16 @@ function planeSvg(col, big) {
   return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="color:${col}"><path fill="${col}" stroke="#000" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="M12 2c.6 0 1 .5 1 1.2V9l8 4.6v2l-8-2.3v4.9l2.4 1.7V21L12 20l-3.4 1v-1.1L11 18.2v-4.9L3 15.6v-2L11 9V3.2C11 2.5 11.4 2 12 2z"/></svg>`;
 }
 const markerByHex = new Map();
+// where the plane is, from the radar's map lookup when it has one ("Over Texas", "Over the Persian Gulf")
+function overWords(p, fallback) {
+  const bh = p.bh || {};
+  const sea = t => String(t).replace(/\b(North|South) (Pacific|Atlantic) Ocean/, '$2 Ocean');
+  if (bh.over) return 'Over ' + bh.over;
+  if (bh.sea) return 'Over ' + sea(bh.sea) + (bh.coast ? ' off ' + bh.coast : '');
+  if (bh.coast) return 'Off the coast of ' + bh.coast;
+  return 'Over ' + fallback;
+}
+
 function drawPlanes() {
   acLayer.clearLayers(); markerByHex.clear();
   if (!live) return;
@@ -230,7 +240,7 @@ function drawPlanes() {
       (sq ? `<div class="pf">${sq}</div>` : '') +
       (tk ? `<div class="pr">\u26FD Possibly refueling with the tanker nearby (${tk.d} mi) ${tipBtn('refuelnear')}</div>` : '') +
       `<div>${esc(flightLine(p.alt, p.gs, p.trk, p.lat, p.lon, p.vr) || 'No height or speed shared')}</div>` +
-      `<div class="pm">Over ${esc(over)} \u00B7 ${esc(fromHome(p.lat, p.lon))}</div>` +
+      `<div class="pm">${esc(overWords(p, over))} \u00B7 ${esc(fromHome(p.lat, p.lon))}</div>` +
       (ids.length ? `<details class="ids"><summary>Plane ID ${tipBtn('planeid')}</summary><div>${ids.map(esc).join(' &middot; ')}</div></details>` : '') +
       (window.WR && WR.popupExtra ? WR.popupExtra(p) : '') +
       `<a href="https://globe.adsb.lol/?icao=${esc(String(p.hex).replace('~', ''))}" target="_blank" rel="noopener">Follow this plane live &rarr;</a></div>`

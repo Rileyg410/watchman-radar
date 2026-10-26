@@ -24,6 +24,7 @@ from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import intel  # noqa: E402  round-two Intel brain
+import geo  # noqa: E402  where each plane is + what it has been doing (for "Probably doing")
 from email.utils import parsedate_to_datetime
 
 try:
@@ -182,9 +183,9 @@ def region_of(lat, lon):
 
 
 # ----------------------------------------------------------------- aircraft
-TANKERS = {"K35R", "K35E", "K46", "KC46", "KC10", "DC10", "KC2", "A39M"}
+TANKERS = {"K35R", "K35E", "K46", "KC46", "KC10", "DC10", "A39M"}
 BOMBERS = {"B52", "B1", "B2", "B21", "TU95", "T95", "TU16", "TU22", "T160", "TU60", "H6"}
-AIRLIFT = {"C17", "C5", "C5M", "IL76", "Y20", "A400", "AN12", "AN22", "A124"}
+AIRLIFT = {"C17", "C5", "C5M", "IL76", "Y20", "A400", "AN12", "AN22", "A124", "KC2"}
 TACTICAL_LIFT = {"C130", "C30J", "E390", "C27J", "C295", "CN35"}
 ISR = {"R135", "E3TF", "E3CF", "E3", "E8", "E7WW", "E737", "P8", "P3", "EP3", "U2",
        "RQ4", "GLHK", "Q4", "MQ9", "E2", "A50", "IL20", "IL38", "TU14"}
@@ -1382,6 +1383,12 @@ def main():
     for r in board:
         board[r]["base_tanker"] = state["baseline"].get(f"{r}:tanker") if state.get("baseline") else None
         board[r]["base_airlift"] = state["baseline"].get(f"{r}:airlift") if state.get("baseline") else None
+    try:
+        t0 = time.time()
+        geo.enrich(planes, state, int(NOW_TS))
+        print(f"behavior notes: {len(planes)} planes in {time.time() - t0:.1f}s")
+    except Exception as e:  # the 'Probably doing' notes must never break a sweep
+        print("behavior notes error:", type(e).__name__, e)
     save_json("live.json", {
         "updated": NOW_TS, "updated_ct": central_time(), "planes": planes, "stats": stats,
         "board": board, "sources": sources, "new_alerts": len(new_alerts), "quiet_now": quiet,

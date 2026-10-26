@@ -58,7 +58,17 @@ function nearestFeed(lat, lon) {
 WR.popupExtra = p => {
   let h = '';
   const d = decode(p.cs, p.t, p.cat);
-  if (d) h += `<div class="ixmis"><b>&#127919; ${esc(d.m)}</b>${d.u ? `<br><span>${esc(d.u)}</span>` : ''}<br><i>${esc(d.d)}</i><br><small>Decoded from ${esc(d.by)}</small></div>`;
+  let pd = null;
+  try { pd = window.WRD ? window.WRD.doing(p, (WR.live && WR.live.planes) || [], missions, WR.live && WR.live.updated) : null; } catch (e) { pd = null; }
+  if (d || pd) {
+    let tipK = '';
+    if (d && d.d && window.TIPS_EXTRA) { tipK = 'ms_' + String(d.m).replace(/[^A-Za-z0-9]/g, ''); window.TIPS_EXTRA[tipK] = d.d; }
+    const tb = k => (typeof tipBtn === 'function' ? tipBtn(k) : '');
+    h += `<div class="ixmis">` +
+      (d ? `<b>&#127919; ${esc(d.m)}</b>${tipK ? tb(tipK) : ''}${d.u ? `<br><span>${esc(d.u)}</span>` : ''}` : '') +
+      (pd ? `<div class="pdo"><em>Probably doing:</em> ${esc(pd.line)}.</div>${pd.why ? `<div class="pdw">${esc(pd.why)}</div>` : ''}` : d ? `<br><i>${esc(d.d)}</i>` : '') +
+      `<small>${pd ? 'Worked out from its ' + esc(pd.by) : 'Decoded from ' + esc(d.by)}${pd ? tb('doing') : ''}</small></div>`;
+  }
   if (feeds.length && p.lat != null) {
     const f = nearestFeed(p.lat, p.lon);
     if (f) {

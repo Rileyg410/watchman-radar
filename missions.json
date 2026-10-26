@@ -1,100 +1,1901 @@
 {
-  "_about": "Mission decoder for Watchman Radar. Callsign words first, then the airplane type. Military callsign words get reused and swapped, so a match is the best guess, not a certainty.",
-  "callsigns": [
-    ["AF1", "Air Force One", "89th Airlift Wing, Joint Base Andrews", "The President is on board."],
-    ["AF2", "Air Force Two", "89th Airlift Wing, Joint Base Andrews", "The Vice President is on board."],
-    ["SAM", "Special Air Mission (VIP)", "89th Airlift Wing, Joint Base Andrews", "Flies cabinet members, top generals and members of Congress."],
-    ["VENUS", "VIP flight", "89th Airlift Wing, Joint Base Andrews", "A government VIP jet."],
-    ["SPAR", "VIP airlift for generals and admirals", "US Air Force VIP fleet", "Carries senior commanders."],
-    ["PAT", "Priority Air Transport", "US Army operational support airlift", "Army VIP and priority passenger flights."],
-    ["RCH", "REACH airlift mission", "Air Mobility Command", "Cargo, troops or fuel being moved for the Pentagon's global airlift."],
-    ["REACH", "REACH airlift mission", "Air Mobility Command", "Cargo, troops or fuel being moved for the Pentagon's global airlift."],
-    ["CNV", "Navy logistics flight", "US Navy fleet logistics", "Moves Navy people and parts to ships and bases."],
-    ["FORTE", "Global Hawk spy drone", "RQ-4 out of Sigonella, Italy", "High-altitude watch flights, often over the Black Sea and Eastern Med."],
-    ["OLIVE", "Rivet Joint signals spy plane", "RC-135 detachment, RAF Mildenhall", "Listens to radars and radio traffic."],
-    ["SNTRY", "AWACS radar plane", "E-3 Sentry", "A flying radar that watches the whole sky and directs jets."],
-    ["NATO", "NATO AWACS radar plane", "NATO Airborne Early Warning, Geilenkirchen", "NATO's own flying radar."],
-    ["MMF", "NATO tanker", "Multinational MRTT Fleet", "NATO's shared refueling and transport jets."],
-    ["HOMER", "Maritime patrol (sub hunter)", "Maritime patrol squadron", "Hunts submarines and watches ships."],
-    ["TEAL", "Hurricane Hunter", "53rd Weather Reconnaissance Squadron", "Flies into storms to measure them."],
-    ["KING", "Rescue tanker", "Air Force rescue HC-130", "Search and rescue and helicopter refueling."],
-    ["PEDRO", "Rescue helicopter", "Air Force rescue HH-60", "Combat search and rescue."],
-    ["RRR", "Royal Air Force airlift (ASCOT)", "Royal Air Force, UK", "British military transport."],
-    ["ASCOT", "Royal Air Force airlift", "Royal Air Force, UK", "British military transport."],
-    ["TARTN", "Royal Air Force tanker (TARTAN)", "Royal Air Force Voyager, Brize Norton", "British air refueling."],
-    ["CFC", "Canadian Forces flight", "Royal Canadian Air Force", "Canadian military flight."],
-    ["GAF", "German Air Force flight", "Luftwaffe", "German military flight."],
-    ["BAF", "Belgian Air Force flight", "Belgian Air Component", "Belgian military flight."],
-    ["NAF", "Dutch Air Force flight", "Royal Netherlands Air Force", "Dutch military flight."],
-    ["PLF", "Polish Air Force flight", "Polish Air Force", "Polish military flight."],
-    ["IAM", "Italian Air Force flight", "Aeronautica Militare", "Italian military flight."],
-    ["CTM", "French Air Force airlift (COTAM)", "French Air and Space Force", "French military transport."],
-    ["FAF", "French Air Force flight", "French Air and Space Force", "French military flight."],
-    ["ASY", "Australian Air Force flight (AUSSIE)", "Royal Australian Air Force", "Australian military flight."],
-    ["KIWI", "New Zealand Air Force flight", "Royal New Zealand Air Force", "New Zealand military flight."],
-    ["RFF", "Russian Air Force flight", "Russian Aerospace Forces", "A Russian military plane showing on ADS-B."]
-  ],
-  "types": {
-    "E4B": ["NIGHTWATCH, the doomsday plane", "595th Command and Control Group, Offutt AFB", "Flying Pentagon for the President and Defense Secretary if the ground is lost. Also flies for training and VIP trips."],
-    "E4": ["NIGHTWATCH, the doomsday plane", "595th Command and Control Group, Offutt AFB", "Flying Pentagon for the President and Defense Secretary if the ground is lost. Also flies for training and VIP trips."],
-    "E6": ["Looking Glass / TACAMO nuclear relay", "Strategic Communications Wing One, Tinker AFB", "Keeps the line open to nuclear submarines and missile crews."],
-    "R135": ["Rivet Joint signals spy plane", "55th Wing, Offutt AFB", "Listens to radars and radio traffic."],
-    "E3TF": ["AWACS radar plane", "E-3 Sentry", "A flying radar that watches the whole sky."],
-    "E3CF": ["AWACS radar plane", "E-3 Sentry", "A flying radar that watches the whole sky."],
-    "E8": ["JSTARS ground radar plane", "E-8 Joint STARS", "Watches ground movement from the air."],
-    "RQ4": ["Global Hawk spy drone", "RQ-4 Global Hawk", "High-altitude watch flights."],
-    "GLHK": ["Global Hawk spy drone", "RQ-4 Global Hawk", "High-altitude watch flights."],
-    "Q4": ["Global Hawk spy drone", "RQ-4 Global Hawk", "High-altitude watch flights."],
-    "MQ9": ["Reaper drone", "MQ-9 Reaper", "Armed or watch drone."],
-    "U2": ["U-2 Dragon Lady spy plane", "9th Reconnaissance Wing, Beale AFB", "Flies at the edge of space to photograph and listen."],
-    "P8": ["P-8 Poseidon sub hunter", "Navy maritime patrol", "Hunts submarines and watches ships."],
-    "P3": ["P-3 Orion sub hunter", "Maritime patrol", "Hunts submarines and watches ships."],
-    "K35R": ["KC-135 refueling tanker", "Air Mobility Command / Air National Guard", "Gas station in the sky for fighters and bombers."],
-    "KC46": ["KC-46 Pegasus tanker", "Air Mobility Command", "Newest US refueling tanker."],
-    "K46": ["KC-46 Pegasus tanker", "Air Mobility Command", "Newest US refueling tanker."],
-    "KC10": ["KC-10 Extender tanker", "Air Mobility Command", "Large refueling tanker."],
-    "A332": ["Airbus tanker or transport", "Military A330", "Often a refueling tanker (MRTT/Voyager)."],
-    "C17": ["C-17 Globemaster heavy airlift", "Air Mobility Command", "Carries tanks, troops and supplies anywhere in the world."],
-    "C5M": ["C-5 Galaxy, the biggest US cargo jet", "Air Mobility Command", "Moves the heaviest loads."],
-    "C5": ["C-5 Galaxy, the biggest US cargo jet", "Air Mobility Command", "Moves the heaviest loads."],
-    "C130": ["C-130 Hercules cargo plane", "Tactical airlift", "Short-runway cargo and troop carrier."],
-    "C30J": ["C-130J Super Hercules", "Tactical airlift", "Short-runway cargo and troop carrier."],
-    "B52": ["B-52 Stratofortress bomber", "Air Force Global Strike Command", "Long-range heavy bomber that can carry nuclear weapons."],
-    "B1": ["B-1B Lancer bomber", "Air Force Global Strike Command", "Fast long-range bomber."],
-    "B2": ["B-2 Spirit stealth bomber", "509th Bomb Wing, Whiteman AFB", "Stealth bomber that can carry nuclear weapons."],
-    "C32": ["C-32 VIP jet", "89th Airlift Wing", "A government VIP 757."],
-    "C40": ["C-40 Clipper", "Navy / Air Force VIP and logistics", "Military 737."],
-    "VC25": ["Air Force One jet (VC-25)", "89th Airlift Wing", "The President's 747."],
-    "A50": ["A-50 Russian radar plane", "Russian Aerospace Forces", "Russia's flying radar."],
-    "IL20": ["Il-20 Russian spy plane", "Russian Aerospace Forces", "Russian signals spy plane."],
-    "IL76": ["Il-76 heavy cargo plane", "Military transport", "Russian-built heavy airlifter."],
-    "TU95": ["Tu-95 Bear bomber", "Russian Long-Range Aviation", "Russian long-range bomber."],
-    "F16": ["F-16 fighter", "Fighter squadron", "Fighter jet."],
-    "F15": ["F-15 fighter", "Fighter squadron", "Fighter jet."],
-    "F35": ["F-35 stealth fighter", "Fighter squadron", "Stealth fighter jet."],
-    "F18S": ["Super Hornet (or Growler)", "Navy strike fighter squadron", "Carrier fighter jet."],
-    "F18H": ["F/A-18 Hornet", "Fighter squadron", "Carrier fighter jet (older model)."],
-    "A10": ["A-10 Warthog", "Attack squadron", "Protects troops on the ground."],
-    "EUFI": ["Eurofighter Typhoon", "Allied fighter squadron", "European fighter jet."],
-    "RFAL": ["Rafale", "Allied fighter squadron", "French fighter jet."],
-    "SB39": ["Gripen", "Allied fighter squadron", "Swedish fighter jet."],
-    "GRIF": ["Gripen", "Allied fighter squadron", "Swedish fighter jet."],
-    "TOR": ["Tornado", "Allied strike squadron", "Strike jet."],
-    "MIR2": ["Mirage 2000", "Fighter squadron", "French-built fighter jet."],
-    "F5": ["F-5 Tiger II", "Adversary / training squadron", "Light fighter, often the enemy in practice dogfights."],
-    "F18": ["F/A-18 fighter", "Navy / Marine fighter squadron", "Carrier fighter jet."],
-    "F22": ["F-22 Raptor", "Fighter squadron", "Stealth air-superiority fighter."],
-    "V22": ["V-22 Osprey tiltrotor", "Marines / Air Force special ops", "Takes off like a helicopter, flies like a plane."],
-    "H60": ["Black Hawk / Seahawk helicopter", "Army / Navy", "Military helicopter."]
-  },
-  "cats": {
-    "tanker": ["Air refueling tanker", "", "Gas station in the sky."],
-    "bomber": ["Bomber", "", "Long-range strike plane."],
-    "airlift": ["Heavy airlift", "", "Moving troops and equipment."],
-    "tactical": ["Tactical airlift", "", "Smaller cargo and troop carrier."],
-    "isr": ["Spy / surveillance flight", "", "Watching and listening."],
-    "c2": ["Nuclear command flight", "", "Part of the chain that carries nuclear orders."],
-    "fighter": ["Fighter jet", "", "Fighter."],
-    "other": ["Military flight", "", "A military plane."]
-  }
+"_about": "Watchman Radar mission decoder. callsigns: [prefix, mission, unit, sentence, role]. types: code -> [name, unit, sentence, role]. role feeds the \"Probably doing\" line in doing.js. Public knowledge, best guesses.",
+"callsigns": [
+[
+"AF1",
+"Air Force One",
+"89th Airlift Wing, Joint Base Andrews",
+"The President is on board.",
+"vip"
+],
+[
+"AF2",
+"Air Force Two",
+"89th Airlift Wing, Joint Base Andrews",
+"The Vice President is on board.",
+"vip"
+],
+[
+"SAM",
+"Special Air Mission (VIP)",
+"89th Airlift Wing, Joint Base Andrews",
+"Flies cabinet members, top generals and members of Congress.",
+"vip"
+],
+[
+"VENUS",
+"VIP flight",
+"89th Airlift Wing, Joint Base Andrews",
+"A government VIP jet.",
+"vip"
+],
+[
+"SPAR",
+"VIP airlift for generals and admirals",
+"US Air Force VIP fleet",
+"Carries senior commanders.",
+"vip"
+],
+[
+"PAT",
+"Priority Air Transport",
+"US Army operational support airlift",
+"Army VIP and priority passenger flights.",
+"vip"
+],
+[
+"EXEC",
+"Executive flight",
+"Government VIP transport",
+"A VIP passenger flight.",
+"vip"
+],
+[
+"RCH",
+"REACH airlift mission",
+"Air Mobility Command",
+"Cargo, troops or fuel being moved for the Pentagon's global airlift.",
+"airlift"
+],
+[
+"REACH",
+"REACH airlift mission",
+"Air Mobility Command",
+"Cargo, troops or fuel being moved for the Pentagon's global airlift.",
+"airlift"
+],
+[
+"EVAC",
+"Medical evacuation flight",
+"Air Force aeromedical evacuation",
+"Carries sick or wounded troops with medical crews on board.",
+"medevac"
+],
+[
+"CNV",
+"Navy logistics flight",
+"US Navy fleet logistics",
+"Moves Navy people and parts to ships and bases.",
+"transport"
+],
+[
+"NAVY",
+"US Navy flight",
+"US Navy",
+"A Navy plane on a routine flight.",
+""
+],
+[
+"ARMY",
+"US Army flight",
+"US Army",
+"An Army plane on a routine flight.",
+""
+],
+[
+"FORTE",
+"Global Hawk spy drone",
+"RQ-4 out of Sigonella, Italy",
+"High-altitude watch flights, often over the Black Sea and Eastern Med.",
+"drone"
+],
+[
+"OLIVE",
+"Rivet Joint signals spy plane",
+"RC-135 detachment, RAF Mildenhall",
+"Listens to radars and radio traffic.",
+"isr"
+],
+[
+"JAKE",
+"Rivet Joint signals spy plane",
+"RC-135, 55th Wing",
+"Listens to radars and radio traffic.",
+"isr"
+],
+[
+"DRAGN",
+"U-2 Dragon Lady spy plane",
+"9th Reconnaissance Wing, Beale AFB",
+"Takes pictures and listens from about 70,000 feet.",
+"isr"
+],
+[
+"SNTRY",
+"AWACS radar plane",
+"E-3 Sentry",
+"A flying radar that watches the whole sky and directs jets.",
+"aew"
+],
+[
+"NATO",
+"NATO AWACS radar plane",
+"NATO Airborne Early Warning, Geilenkirchen",
+"NATO's own flying radar.",
+"aew"
+],
+[
+"MMF",
+"NATO tanker",
+"Multinational MRTT Fleet",
+"NATO's shared refueling and transport jets.",
+"tanker"
+],
+[
+"QID",
+"KC-135 tanker",
+"100th Air Refueling Wing, RAF Mildenhall",
+"The US refueling wing based in England.",
+"tanker"
+],
+[
+"LAGR",
+"KC-135 tanker",
+"100th Air Refueling Wing, RAF Mildenhall",
+"The US refueling wing based in England.",
+"tanker"
+],
+[
+"SHELL",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"TEXACO",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"ARCO",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"ESSO",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"EXXON",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"MOBIL",
+"Refueling tanker",
+"Tanker call sign",
+"A tanker on a refueling track.",
+"tanker"
+],
+[
+"HOMER",
+"Maritime patrol (sub hunter)",
+"Maritime patrol squadron",
+"Hunts submarines and watches ships.",
+"asw"
+],
+[
+"TEAL",
+"Hurricane Hunter",
+"53rd Weather Reconnaissance Squadron",
+"Flies into storms to measure them.",
+"weather"
+],
+[
+"KING",
+"Rescue tanker",
+"Air Force rescue HC-130",
+"Search and rescue and helicopter refueling.",
+"sar"
+],
+[
+"PEDRO",
+"Rescue helicopter",
+"Air Force rescue HH-60",
+"Combat search and rescue.",
+"heli_sar"
+],
+[
+"JOLLY",
+"Rescue helicopter (Jolly Green)",
+"Air Force rescue HH-60",
+"Combat search and rescue.",
+"heli_sar"
+],
+[
+"DUSTOFF",
+"Army medevac helicopter",
+"Army air ambulance",
+"Picks up hurt soldiers and flies them to care.",
+"heli_sar"
+],
+[
+"TEST",
+"Test flight",
+"Maintenance or test crew",
+"Checking a plane after repairs or testing something new.",
+"test"
+],
+[
+"RRR",
+"Royal Air Force airlift (ASCOT)",
+"Royal Air Force, UK",
+"British military transport.",
+"transport"
+],
+[
+"ASCOT",
+"Royal Air Force airlift",
+"Royal Air Force, UK",
+"British military transport.",
+"transport"
+],
+[
+"TARTN",
+"Royal Air Force tanker (TARTAN)",
+"Royal Air Force Voyager, Brize Norton",
+"British air refueling.",
+"tanker"
+],
+[
+"CFC",
+"Canadian Forces flight",
+"Royal Canadian Air Force",
+"Canadian military flight.",
+""
+],
+[
+"GAF",
+"German Air Force flight",
+"Luftwaffe",
+"German military flight.",
+""
+],
+[
+"BAF",
+"Belgian Air Force flight",
+"Belgian Air Component",
+"Belgian military flight.",
+""
+],
+[
+"NAF",
+"Dutch Air Force flight",
+"Royal Netherlands Air Force",
+"Dutch military flight.",
+""
+],
+[
+"PLF",
+"Polish Air Force flight",
+"Polish Air Force",
+"Polish military flight.",
+""
+],
+[
+"IAM",
+"Italian Air Force flight",
+"Aeronautica Militare",
+"Italian military flight.",
+""
+],
+[
+"CTM",
+"French Air Force airlift (COTAM)",
+"French Air and Space Force",
+"French military transport.",
+"transport"
+],
+[
+"FAF",
+"French Air Force flight",
+"French Air and Space Force",
+"French military flight.",
+""
+],
+[
+"FNY",
+"French Navy flight",
+"French Navy",
+"French Navy plane.",
+""
+],
+[
+"AME",
+"Spanish Air Force flight",
+"Spanish Air and Space Force",
+"Spanish military flight.",
+""
+],
+[
+"HAF",
+"Greek Air Force flight",
+"Hellenic Air Force",
+"Greek military flight.",
+""
+],
+[
+"CEF",
+"Czech Air Force flight",
+"Czech Air Force",
+"Czech military flight.",
+""
+],
+[
+"SVF",
+"Swedish Air Force flight",
+"Swedish Air Force",
+"Swedish military flight.",
+""
+],
+[
+"NOW",
+"Norwegian Air Force flight",
+"Royal Norwegian Air Force",
+"Norwegian military flight.",
+""
+],
+[
+"DAF",
+"Danish Air Force flight",
+"Royal Danish Air Force",
+"Danish military flight.",
+""
+],
+[
+"ASY",
+"Australian Air Force flight (AUSSIE)",
+"Royal Australian Air Force",
+"Australian military flight.",
+""
+],
+[
+"KIWI",
+"New Zealand Air Force flight",
+"Royal New Zealand Air Force",
+"New Zealand military flight.",
+""
+],
+[
+"IFC",
+"Indian Air Force flight",
+"Indian Air Force",
+"Indian military flight.",
+""
+],
+[
+"UAF",
+"UAE Air Force flight",
+"UAE Air Force",
+"Emirati military flight.",
+""
+],
+[
+"RSF",
+"Royal Saudi Air Force flight",
+"Royal Saudi Air Force",
+"Saudi military flight.",
+""
+],
+[
+"KAF",
+"Kuwait Air Force flight",
+"Kuwait Air Force",
+"Kuwaiti military flight.",
+""
+],
+[
+"QAF",
+"Qatar Amiri Flight",
+"Qatar government",
+"Qatar's royal and government VIP jets.",
+"vip"
+],
+[
+"RFF",
+"Russian Air Force flight",
+"Russian Aerospace Forces",
+"A Russian military plane showing on ADS-B.",
+""
+],
+[
+"RSD",
+"Russian government VIP flight",
+"Rossiya special flight squadron",
+"Flies Russian leaders and officials.",
+"vip"
+]
+],
+"types": {
+"E4B": [
+"NIGHTWATCH, the doomsday plane",
+"595th Command and Control Group, Offutt AFB",
+"Flying Pentagon for the President and Defense Secretary if the ground is lost. Also flies for training and VIP trips.",
+"c2"
+],
+"E4": [
+"NIGHTWATCH, the doomsday plane",
+"595th Command and Control Group, Offutt AFB",
+"Flying Pentagon for the President and Defense Secretary if the ground is lost. Also flies for training and VIP trips.",
+"c2"
+],
+"E6": [
+"Looking Glass / TACAMO nuclear relay",
+"Strategic Communications Wing One, Tinker AFB",
+"Keeps the line open to nuclear submarines and missile crews.",
+"c2"
+],
+"R135": [
+"RC-135 signals spy plane",
+"55th Wing, Offutt AFB",
+"Listens to radars and radio traffic. Cousins sniff the air for nuclear tests or fly Open Skies.",
+"isr"
+],
+"E3TF": [
+"AWACS radar plane",
+"E-3 Sentry",
+"A flying radar that watches the whole sky.",
+"aew"
+],
+"E3CF": [
+"AWACS radar plane",
+"E-3 Sentry",
+"A flying radar that watches the whole sky.",
+"aew"
+],
+"E3": [
+"AWACS radar plane",
+"E-3 Sentry",
+"A flying radar that watches the whole sky.",
+"aew"
+],
+"E737": [
+"E-7 Wedgetail radar plane",
+"Airborne early warning",
+"A 737 with a big radar on its back that watches the sky.",
+"aew"
+],
+"E7WW": [
+"E-7 Wedgetail radar plane",
+"Airborne early warning",
+"A 737 with a big radar on its back that watches the sky.",
+"aew"
+],
+"E2": [
+"E-2 Hawkeye radar plane",
+"Navy carrier air wing",
+"The carrier's flying radar.",
+"aew"
+],
+"A50": [
+"A-50 Russian radar plane",
+"Russian Aerospace Forces",
+"Russia's flying radar.",
+"aew"
+],
+"E8": [
+"JSTARS ground radar plane",
+"E-8 Joint STARS",
+"Tracks vehicles moving on the ground.",
+"isr"
+],
+"U2": [
+"U-2 Dragon Lady spy plane",
+"9th Reconnaissance Wing",
+"Takes pictures and listens from about 70,000 feet.",
+"isr"
+],
+"IL20": [
+"Il-20 Russian spy plane",
+"Russian Aerospace Forces",
+"Russian signals spy plane.",
+"isr"
+],
+"GLEX": [
+"Global Express spy or relay jet",
+"Special mission business jet",
+"Militaries use these as flying radio relays (E-11A) or ground-watching radar jets.",
+"isr"
+],
+"CL60": [
+"Challenger special-mission jet",
+"Military business jet",
+"Used for VIPs or as a small spy and radar jet.",
+"isr"
+],
+"DH8A": [
+"Dash 8 special-mission plane",
+"Surveillance or transport",
+"Some carry cameras and radar for border or ocean watch.",
+"isr"
+],
+"DH8B": [
+"Dash 8 special-mission plane",
+"Surveillance or transport",
+"Some carry cameras and radar for border or ocean watch.",
+"isr"
+],
+"DH8C": [
+"Dash 8 special-mission plane",
+"Surveillance or transport",
+"Some carry cameras and radar for border or ocean watch.",
+"isr"
+],
+"RQ4": [
+"RQ-4 Global Hawk spy drone",
+"High-altitude drone",
+"Flies about 55,000 feet up for a day or more, taking pictures and listening.",
+"drone"
+],
+"GLHK": [
+"RQ-4 Global Hawk spy drone",
+"High-altitude drone",
+"Flies about 55,000 feet up for a day or more, taking pictures and listening.",
+"drone"
+],
+"Q4": [
+"MQ-4C Triton ocean-watch drone",
+"Navy drone squadron",
+"A Navy Global Hawk that watches ships over the ocean.",
+"drone"
+],
+"MQ4": [
+"MQ-4C Triton ocean-watch drone",
+"Navy drone squadron",
+"A Navy Global Hawk that watches ships over the ocean.",
+"drone"
+],
+"MQ9": [
+"MQ-9 Reaper drone",
+"Air Force drone squadron",
+"Watches the ground with cameras for many hours and can carry missiles.",
+"drone"
+],
+"Q9": [
+"MQ-9 Reaper drone",
+"Air Force drone squadron",
+"Watches the ground with cameras for many hours and can carry missiles.",
+"drone"
+],
+"MQ1": [
+"MQ-1 Predator drone",
+"Drone squadron",
+"Watches the ground with cameras.",
+"drone"
+],
+"Q1": [
+"MQ-1 Predator drone",
+"Drone squadron",
+"Watches the ground with cameras.",
+"drone"
+],
+"HRON": [
+"Heron drone",
+"Drone squadron",
+"An Israeli-built watch drone.",
+"drone"
+],
+"P8": [
+"P-8 Poseidon sub hunter",
+"Navy / allied maritime patrol",
+"A 737 that hunts submarines and watches ships.",
+"asw"
+],
+"P3": [
+"P-3 Orion patrol plane",
+"Maritime patrol",
+"Hunts submarines and watches ships.",
+"asw"
+],
+"EP3": [
+"P-3 Orion patrol plane",
+"Maritime patrol",
+"Hunts submarines and watches ships.",
+"asw"
+],
+"P1": [
+"Kawasaki P-1 sub hunter",
+"Japan Maritime Self-Defense Force",
+"Japan's submarine hunter.",
+"asw"
+],
+"ATL2": [
+"Atlantique 2 sub hunter",
+"French Navy",
+"French sub hunter.",
+"asw"
+],
+"IL38": [
+"Il-38 Russian sub hunter",
+"Russian Navy",
+"Russian maritime patrol plane.",
+"asw"
+],
+"K35R": [
+"KC-135 refueling tanker",
+"Air Mobility Command / Air National Guard",
+"Gas station in the sky for fighters and bombers.",
+"tanker"
+],
+"K35E": [
+"KC-135 refueling tanker",
+"Air Mobility Command / Air National Guard",
+"Gas station in the sky for fighters and bombers.",
+"tanker"
+],
+"KC46": [
+"KC-46 Pegasus tanker",
+"Air Mobility Command",
+"Newest US refueling tanker.",
+"tanker"
+],
+"K46": [
+"KC-46 Pegasus tanker",
+"Air Mobility Command",
+"Newest US refueling tanker.",
+"tanker"
+],
+"KC10": [
+"KC-10 Extender tanker",
+"Air Mobility Command",
+"Large refueling tanker.",
+"tanker"
+],
+"DC10": [
+"KC-10 Extender tanker",
+"Air Mobility Command",
+"Large refueling tanker.",
+"tanker"
+],
+"A332": [
+"Airbus tanker or transport",
+"Military A330",
+"Often a refueling tanker (MRTT/Voyager).",
+"tanker"
+],
+"A339": [
+"Airbus tanker or transport",
+"Military A330",
+"Often a refueling tanker (MRTT/Voyager).",
+"tanker"
+],
+"IL78": [
+"Il-78 tanker",
+"Russian / Indian air force",
+"Russian-built refueling tanker.",
+"tanker"
+],
+"A310": [
+"A310 tanker or transport",
+"Military A310",
+"Used for troops, VIPs or refueling.",
+"transport"
+],
+"C17": [
+"C-17 Globemaster heavy airlift",
+"Air Mobility Command",
+"Carries tanks, troops and supplies anywhere in the world.",
+"airlift"
+],
+"C5M": [
+"C-5 Galaxy, the biggest US cargo jet",
+"Air Mobility Command",
+"Moves the heaviest loads.",
+"airlift"
+],
+"C5": [
+"C-5 Galaxy, the biggest US cargo jet",
+"Air Mobility Command",
+"Moves the heaviest loads.",
+"airlift"
+],
+"IL76": [
+"Il-76 heavy cargo plane",
+"Military transport",
+"Russian-built heavy airlifter.",
+"airlift"
+],
+"A400": [
+"A400M Atlas cargo plane",
+"European air forces",
+"Big four-propeller cargo and troop carrier.",
+"airlift"
+],
+"KC2": [
+"Kawasaki C-2 cargo plane",
+"Japan Air Self-Defense Force",
+"Japan's big cargo jet.",
+"airlift"
+],
+"Y20": [
+"Y-20 heavy cargo plane",
+"Chinese Air Force",
+"China's big cargo jet.",
+"airlift"
+],
+"A124": [
+"Antonov cargo plane",
+"Military transport",
+"Russian/Ukrainian-built cargo plane.",
+"airlift"
+],
+"AN22": [
+"Antonov cargo plane",
+"Military transport",
+"Russian/Ukrainian-built cargo plane.",
+"airlift"
+],
+"AN12": [
+"Antonov cargo plane",
+"Military transport",
+"Russian/Ukrainian-built cargo plane.",
+"airlift"
+],
+"C130": [
+"C-130 Hercules cargo plane",
+"Tactical airlift",
+"Short-runway cargo and troop carrier.",
+"tactical"
+],
+"C30J": [
+"C-130 Hercules cargo plane",
+"Tactical airlift",
+"Short-runway cargo and troop carrier.",
+"tactical"
+],
+"C27J": [
+"C-27J Spartan cargo plane",
+"Tactical airlift / Coast Guard",
+"Small twin-propeller cargo plane.",
+"tactical"
+],
+"CN35": [
+"CASA cargo plane",
+"Tactical airlift",
+"Small cargo and patrol plane.",
+"tactical"
+],
+"C295": [
+"CASA cargo plane",
+"Tactical airlift",
+"Small cargo and patrol plane.",
+"tactical"
+],
+"E390": [
+"KC-390 Millennium",
+"Cargo and tanker jet",
+"Brazilian-built cargo jet that can also refuel.",
+"tactical"
+],
+"AN26": [
+"Antonov small cargo plane",
+"Military transport",
+"Twin-engine cargo and troop plane.",
+"tactical"
+],
+"AN32": [
+"Antonov small cargo plane",
+"Military transport",
+"Twin-engine cargo and troop plane.",
+"tactical"
+],
+"AN72": [
+"Antonov small cargo plane",
+"Military transport",
+"Twin-engine cargo and troop plane.",
+"tactical"
+],
+"C160": [
+"Transall cargo plane",
+"Military transport",
+"Older twin-propeller cargo plane.",
+"tactical"
+],
+"C212": [
+"CASA C-212 Aviocar",
+"Light transport",
+"Small cargo, parachute and patrol plane.",
+"tactical"
+],
+"B52": [
+"B-52 Stratofortress bomber",
+"Air Force Global Strike Command",
+"Long-range heavy bomber that can carry nuclear weapons.",
+"bomber"
+],
+"B1": [
+"B-1B Lancer bomber",
+"Air Force Global Strike Command",
+"Fast long-range bomber.",
+"bomber"
+],
+"B2": [
+"B-2 Spirit stealth bomber",
+"509th Bomb Wing, Whiteman AFB",
+"Stealth bomber that can carry nuclear weapons.",
+"bomber"
+],
+"TU95": [
+"Tu-95 Bear bomber",
+"Russian Long-Range Aviation",
+"Russian long-range bomber.",
+"bomber"
+],
+"T95": [
+"Tu-95 Bear bomber",
+"Russian Long-Range Aviation",
+"Russian long-range bomber.",
+"bomber"
+],
+"T160": [
+"Tu-160 Blackjack bomber",
+"Russian Long-Range Aviation",
+"Russian supersonic bomber.",
+"bomber"
+],
+"TU60": [
+"Tu-160 Blackjack bomber",
+"Russian Long-Range Aviation",
+"Russian supersonic bomber.",
+"bomber"
+],
+"TU22": [
+"Tu-22M Backfire bomber",
+"Russian Long-Range Aviation",
+"Russian strike bomber.",
+"bomber"
+],
+"H6": [
+"H-6 bomber",
+"Chinese Air Force",
+"China's long-range bomber.",
+"bomber"
+],
+"F16": [
+"F-16 fighter",
+"Fighter squadron",
+"Fighter jet.",
+"fighter"
+],
+"F15": [
+"F-15 fighter",
+"Fighter squadron",
+"Fighter jet.",
+"fighter"
+],
+"F15E": [
+"F-15 fighter",
+"Fighter squadron",
+"Fighter jet.",
+"fighter"
+],
+"F15X": [
+"F-15 fighter",
+"Fighter squadron",
+"Fighter jet.",
+"fighter"
+],
+"F35": [
+"F-35 stealth fighter",
+"Fighter squadron",
+"Stealth fighter jet.",
+"fighter"
+],
+"F18S": [
+"Super Hornet (or Growler)",
+"Navy strike fighter squadron",
+"Carrier fighter jet.",
+"fighter"
+],
+"F18H": [
+"F/A-18 Hornet",
+"Fighter squadron",
+"Carrier fighter jet (older model).",
+"fighter"
+],
+"F18": [
+"F/A-18 fighter",
+"Navy / Marine fighter squadron",
+"Carrier fighter jet.",
+"fighter"
+],
+"E18G": [
+"EA-18G Growler",
+"Navy electronic attack squadron",
+"Jams enemy radars.",
+"fighter"
+],
+"EA18": [
+"EA-18G Growler",
+"Navy electronic attack squadron",
+"Jams enemy radars.",
+"fighter"
+],
+"F22": [
+"F-22 Raptor",
+"Fighter squadron",
+"Stealth air-superiority fighter.",
+"fighter"
+],
+"EUFI": [
+"Eurofighter Typhoon",
+"Allied fighter squadron",
+"European fighter jet.",
+"fighter"
+],
+"RFAL": [
+"Rafale",
+"Allied fighter squadron",
+"French fighter jet.",
+"fighter"
+],
+"SB39": [
+"Gripen",
+"Allied fighter squadron",
+"Swedish fighter jet.",
+"fighter"
+],
+"GRIF": [
+"Gripen",
+"Allied fighter squadron",
+"Swedish fighter jet.",
+"fighter"
+],
+"JAS39": [
+"Gripen",
+"Allied fighter squadron",
+"Swedish fighter jet.",
+"fighter"
+],
+"TOR": [
+"Tornado",
+"Allied strike squadron",
+"Strike jet.",
+"fighter"
+],
+"MIR2": [
+"Mirage 2000",
+"Fighter squadron",
+"French-built fighter jet.",
+"fighter"
+],
+"M2000": [
+"Mirage 2000",
+"Fighter squadron",
+"French-built fighter jet.",
+"fighter"
+],
+"F5": [
+"F-5 Tiger II",
+"Adversary / training squadron",
+"Light fighter, often the enemy in practice dogfights.",
+"fighter"
+],
+"A10": [
+"A-10 Warthog",
+"Attack squadron",
+"Protects troops on the ground.",
+"attack"
+],
+"AV8B": [
+"AV-8B Harrier",
+"Marine attack squadron",
+"Jump jet that can take off straight up.",
+"attack"
+],
+"HAR": [
+"AV-8B Harrier",
+"Marine attack squadron",
+"Jump jet that can take off straight up.",
+"attack"
+],
+"SU25": [
+"Su-25 Frogfoot",
+"Attack squadron",
+"Russian-built ground-attack jet.",
+"attack"
+],
+"E314": [
+"Super Tucano",
+"Light attack / training",
+"Propeller plane for training and light attack.",
+"trainer"
+],
+"T27": [
+"Super Tucano",
+"Light attack / training",
+"Propeller plane for training and light attack.",
+"trainer"
+],
+"AT8T": [
+"Air Tractor patrol plane",
+"Border patrol / light attack",
+"A tough crop-duster design some militaries arm for border patrol.",
+"patrol"
+],
+"AT6T": [
+"Air Tractor patrol plane",
+"Border patrol / light attack",
+"A tough crop-duster design some militaries arm for border patrol.",
+"patrol"
+],
+"C32": [
+"C-32 VIP jet (757)",
+"89th Airlift Wing",
+"A government VIP 757.",
+"vip"
+],
+"B752": [
+"C-32 VIP jet (757)",
+"89th Airlift Wing",
+"A government VIP 757.",
+"vip"
+],
+"VC25": [
+"Air Force One jet (VC-25)",
+"89th Airlift Wing",
+"The President's 747.",
+"vip"
+],
+"B742": [
+"Air Force One jet (VC-25)",
+"89th Airlift Wing",
+"The President's 747.",
+"vip"
+],
+"B748": [
+"Air Force One jet (VC-25)",
+"89th Airlift Wing",
+"The President's 747.",
+"vip"
+],
+"C40": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B737": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B738": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B739": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B734": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B38M": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"B733": [
+"Military 737",
+"VIP, troop or logistics transport",
+"A 737 used for officials, troops or Navy logistics.",
+"transport"
+],
+"A319": [
+"Military Airbus jet",
+"Government transport",
+"Carries officials or troops.",
+"transport"
+],
+"A320": [
+"Military Airbus jet",
+"Government transport",
+"Carries officials or troops.",
+"transport"
+],
+"A321": [
+"Military Airbus jet",
+"Government transport",
+"Carries officials or troops.",
+"transport"
+],
+"A20N": [
+"Military Airbus jet",
+"Government transport",
+"Carries officials or troops.",
+"transport"
+],
+"A21N": [
+"Military Airbus jet",
+"Government transport",
+"Carries officials or troops.",
+"transport"
+],
+"B763": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"B772": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"B77L": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"B788": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"B789": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"A359": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"A343": [
+"Military widebody jet",
+"Government transport",
+"A big jet for leaders or troops.",
+"transport"
+],
+"GLF5": [
+"Gulfstream VIP jet (C-37 / C-20)",
+"Military VIP squadron",
+"Flies generals, officials and small teams.",
+"vip"
+],
+"GLF6": [
+"Gulfstream VIP jet (C-37 / C-20)",
+"Military VIP squadron",
+"Flies generals, officials and small teams.",
+"vip"
+],
+"GLF4": [
+"Gulfstream VIP jet (C-37 / C-20)",
+"Military VIP squadron",
+"Flies generals, officials and small teams.",
+"vip"
+],
+"GL5T": [
+"Gulfstream VIP jet (C-37 / C-20)",
+"Military VIP squadron",
+"Flies generals, officials and small teams.",
+"vip"
+],
+"GL7T": [
+"Gulfstream VIP jet (C-37 / C-20)",
+"Military VIP squadron",
+"Flies generals, officials and small teams.",
+"vip"
+],
+"FA7X": [
+"Falcon VIP jet",
+"Military VIP squadron",
+"A business jet for officials.",
+"vip"
+],
+"F900": [
+"Falcon VIP jet",
+"Military VIP squadron",
+"A business jet for officials.",
+"vip"
+],
+"F2TH": [
+"Falcon VIP jet",
+"Military VIP squadron",
+"A business jet for officials.",
+"vip"
+],
+"FA50": [
+"Falcon VIP jet",
+"Military VIP squadron",
+"A business jet for officials.",
+"vip"
+],
+"FA8X": [
+"Falcon VIP jet",
+"Military VIP squadron",
+"A business jet for officials.",
+"vip"
+],
+"LJ35": [
+"Learjet (C-21)",
+"Operational support airlift",
+"Small fast jet for a few passengers or parts.",
+"utility"
+],
+"LJ45": [
+"Learjet (C-21)",
+"Operational support airlift",
+"Small fast jet for a few passengers or parts.",
+"utility"
+],
+"LJ60": [
+"Learjet (C-21)",
+"Operational support airlift",
+"Small fast jet for a few passengers or parts.",
+"utility"
+],
+"C560": [
+"Cessna Citation (UC-35 / UC-41)",
+"Operational support airlift",
+"Small jet for a few passengers.",
+"utility"
+],
+"C56X": [
+"Cessna Citation (UC-35 / UC-41)",
+"Operational support airlift",
+"Small jet for a few passengers.",
+"utility"
+],
+"C680": [
+"Cessna Citation (UC-35 / UC-41)",
+"Operational support airlift",
+"Small jet for a few passengers.",
+"utility"
+],
+"C68A": [
+"Cessna Citation (UC-35 / UC-41)",
+"Operational support airlift",
+"Small jet for a few passengers.",
+"utility"
+],
+"C700": [
+"Cessna Citation (UC-35 / UC-41)",
+"Operational support airlift",
+"Small jet for a few passengers.",
+"utility"
+],
+"T154": [
+"Russian government jet",
+"Government transport",
+"Russian-built passenger jet for officials.",
+"vip"
+],
+"IL62": [
+"Russian government jet",
+"Government transport",
+"Russian-built passenger jet for officials.",
+"vip"
+],
+"IL96": [
+"Russian government jet",
+"Government transport",
+"Russian-built passenger jet for officials.",
+"vip"
+],
+"BE20": [
+"King Air (C-12 Huron)",
+"Utility / special mission",
+"Moves a few people or parts. Some versions carry spy sensors (MC-12 / RC-12).",
+"utility"
+],
+"B350": [
+"King Air (C-12 Huron)",
+"Utility / special mission",
+"Moves a few people or parts. Some versions carry spy sensors (MC-12 / RC-12).",
+"utility"
+],
+"BE30": [
+"King Air (C-12 Huron)",
+"Utility / special mission",
+"Moves a few people or parts. Some versions carry spy sensors (MC-12 / RC-12).",
+"utility"
+],
+"BE9L": [
+"King Air 90 (T-44)",
+"Navy multi-engine training",
+"Teaches Navy pilots to fly twin-engine planes.",
+"trainer"
+],
+"BE40": [
+"T-1 Jayhawk",
+"Air Force pilot training",
+"Trains pilots headed for tankers and cargo planes.",
+"trainer"
+],
+"C208": [
+"Cessna Caravan",
+"Utility",
+"Small single-propeller utility plane.",
+"utility"
+],
+"PC12": [
+"PC-12 (U-28A)",
+"Special operations / utility",
+"Small plane used for special-ops spying or moving people.",
+"isr"
+],
+"DHC6": [
+"Twin Otter",
+"Utility",
+"Small rugged plane for short runways and parachuting.",
+"utility"
+],
+"E120": [
+"Embraer jet",
+"Government transport",
+"Moves officials or small groups.",
+"utility"
+],
+"E135": [
+"Embraer jet",
+"Government transport",
+"Moves officials or small groups.",
+"utility"
+],
+"E145": [
+"Embraer jet",
+"Government transport",
+"Moves officials or small groups.",
+"utility"
+],
+"E35L": [
+"Embraer jet",
+"Government transport",
+"Moves officials or small groups.",
+"utility"
+],
+"C26": [
+"C-26 Metroliner",
+"National Guard / special mission",
+"Small plane, sometimes with cameras for counter-drug work.",
+"utility"
+],
+"SW4": [
+"C-26 Metroliner",
+"National Guard / special mission",
+"Small plane, sometimes with cameras for counter-drug work.",
+"utility"
+],
+"TEX2": [
+"T-6 Texan II trainer",
+"Pilot training",
+"Where new military pilots learn to fly.",
+"trainer"
+],
+"T6": [
+"T-6 Texan II trainer",
+"Pilot training",
+"Where new military pilots learn to fly.",
+"trainer"
+],
+"T38": [
+"T-38 Talon jet trainer",
+"Pilot training",
+"Supersonic trainer for future fighter and bomber pilots.",
+"trainer"
+],
+"HAWK": [
+"Hawk jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"T45": [
+"Hawk jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"PC7": [
+"Pilatus trainer",
+"Pilot training",
+"Propeller trainer for new military pilots.",
+"trainer"
+],
+"PC9": [
+"Pilatus trainer",
+"Pilot training",
+"Propeller trainer for new military pilots.",
+"trainer"
+],
+"PC21": [
+"Pilatus trainer",
+"Pilot training",
+"Propeller trainer for new military pilots.",
+"trainer"
+],
+"KT1": [
+"KT-1 Woongbi trainer",
+"Pilot training",
+"Korean-built propeller trainer.",
+"trainer"
+],
+"CT4": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"DA40": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"DA42": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"G120": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"G115": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"SR22": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"P28A": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"C172": [
+"Basic trainer",
+"Flight school",
+"Small plane where cadets take their first flights.",
+"trainer"
+],
+"M346": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"L39": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"L159": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"AJET": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"M339": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"T50": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"T7": [
+"Jet trainer",
+"Advanced pilot training",
+"Jet trainer for future fighter pilots.",
+"trainer"
+],
+"H60": [
+"Black Hawk / Seahawk helicopter",
+"Army / Navy / Air Force",
+"The workhorse helicopter: troops, rescue, medevac and sub hunting.",
+"heli"
+],
+"S70": [
+"Black Hawk / Seahawk helicopter",
+"Army / Navy / Air Force",
+"The workhorse helicopter: troops, rescue, medevac and sub hunting.",
+"heli"
+],
+"UH60": [
+"Black Hawk / Seahawk helicopter",
+"Army / Navy / Air Force",
+"The workhorse helicopter: troops, rescue, medevac and sub hunting.",
+"heli"
+],
+"MH60": [
+"Black Hawk / Seahawk helicopter",
+"Army / Navy / Air Force",
+"The workhorse helicopter: troops, rescue, medevac and sub hunting.",
+"heli"
+],
+"H47": [
+"CH-47 Chinook helicopter",
+"Army heavy-lift helicopter",
+"Two-rotor helicopter that carries troops and big loads.",
+"heli_cargo"
+],
+"CH47": [
+"CH-47 Chinook helicopter",
+"Army heavy-lift helicopter",
+"Two-rotor helicopter that carries troops and big loads.",
+"heli_cargo"
+],
+"H53": [
+"CH-53 Super Stallion helicopter",
+"Marine heavy-lift helicopter",
+"The biggest US helicopter, for Marines and heavy loads.",
+"heli_cargo"
+],
+"H53S": [
+"CH-53 Super Stallion helicopter",
+"Marine heavy-lift helicopter",
+"The biggest US helicopter, for Marines and heavy loads.",
+"heli_cargo"
+],
+"H64": [
+"AH-64 Apache attack helicopter",
+"Army attack helicopter",
+"Gunship helicopter.",
+"heli_attack"
+],
+"AH64": [
+"AH-64 Apache attack helicopter",
+"Army attack helicopter",
+"Gunship helicopter.",
+"heli_attack"
+],
+"AH1": [
+"Huey / Cobra helicopter",
+"Marine or Army helicopter",
+"Utility or attack helicopter.",
+"heli"
+],
+"H1": [
+"Huey / Cobra helicopter",
+"Marine or Army helicopter",
+"Utility or attack helicopter.",
+"heli"
+],
+"UH1Y": [
+"Huey / Cobra helicopter",
+"Marine or Army helicopter",
+"Utility or attack helicopter.",
+"heli"
+],
+"UH1": [
+"Huey / Cobra helicopter",
+"Marine or Army helicopter",
+"Utility or attack helicopter.",
+"heli"
+],
+"TIGR": [
+"Attack helicopter",
+"Army aviation",
+"Gunship helicopter.",
+"heli_attack"
+],
+"MI24": [
+"Attack helicopter",
+"Army aviation",
+"Gunship helicopter.",
+"heli_attack"
+],
+"MI28": [
+"Attack helicopter",
+"Army aviation",
+"Gunship helicopter.",
+"heli_attack"
+],
+"EC45": [
+"UH-72 Lakota helicopter",
+"Army / National Guard",
+"Light helicopter for training, medevac and border work.",
+"heli"
+],
+"H145": [
+"UH-72 Lakota helicopter",
+"Army / National Guard",
+"Light helicopter for training, medevac and border work.",
+"heli"
+],
+"EC35": [
+"EC135 helicopter",
+"Military helicopter training",
+"Light twin-engine helicopter many militaries train on.",
+"heli"
+],
+"H135": [
+"EC135 helicopter",
+"Military helicopter training",
+"Light twin-engine helicopter many militaries train on.",
+"heli"
+],
+"AS65": [
+"MH-65 Dolphin helicopter",
+"US Coast Guard",
+"The Coast Guard rescue helicopter.",
+"heli_sar"
+],
+"EC25": [
+"Super Puma helicopter",
+"Military transport helicopter",
+"Medium helicopter for troops and rescue.",
+"heli"
+],
+"AS32": [
+"Super Puma helicopter",
+"Military transport helicopter",
+"Medium helicopter for troops and rescue.",
+"heli"
+],
+"AS3B": [
+"Super Puma helicopter",
+"Military transport helicopter",
+"Medium helicopter for troops and rescue.",
+"heli"
+],
+"PUMA": [
+"Super Puma helicopter",
+"Military transport helicopter",
+"Medium helicopter for troops and rescue.",
+"heli"
+],
+"EC55": [
+"Super Puma helicopter",
+"Military transport helicopter",
+"Medium helicopter for troops and rescue.",
+"heli"
+],
+"A139": [
+"AW139 helicopter (MH-139)",
+"Military / government helicopter",
+"Medium helicopter for rescue, VIPs and missile-field security.",
+"heli"
+],
+"A169": [
+"AW139 helicopter (MH-139)",
+"Military / government helicopter",
+"Medium helicopter for rescue, VIPs and missile-field security.",
+"heli"
+],
+"A189": [
+"AW139 helicopter (MH-139)",
+"Military / government helicopter",
+"Medium helicopter for rescue, VIPs and missile-field security.",
+"heli"
+],
+"NH90": [
+"Navy / army helicopter",
+"Military helicopter",
+"Used for troops, rescue and sub hunting.",
+"heli"
+],
+"EH10": [
+"Navy / army helicopter",
+"Military helicopter",
+"Used for troops, rescue and sub hunting.",
+"heli"
+],
+"LYNX": [
+"Navy / army helicopter",
+"Military helicopter",
+"Used for troops, rescue and sub hunting.",
+"heli"
+],
+"WILD": [
+"Navy / army helicopter",
+"Military helicopter",
+"Used for troops, rescue and sub hunting.",
+"heli"
+],
+"MI8": [
+"Mi-8/17 helicopter",
+"Military transport helicopter",
+"Russian-built transport helicopter.",
+"heli"
+],
+"MI17": [
+"Mi-8/17 helicopter",
+"Military transport helicopter",
+"Russian-built transport helicopter.",
+"heli"
+],
+"B06": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"B407": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"B429": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"A109": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"A119": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"EC30": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"AS50": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"H500": [
+"Light helicopter",
+"Training or utility",
+"Small helicopter for training or quick trips.",
+"heli"
+],
+"S92": [
+"VH-92 / S-92 helicopter",
+"Marine One fleet or rescue",
+"Can be a presidential helicopter or a rescue helicopter.",
+"heli"
+],
+"V22": [
+"V-22 Osprey tiltrotor",
+"Marines / Air Force special ops",
+"Takes off like a helicopter, flies like a plane.",
+"tiltrotor"
+],
+"B762": [
+"Military 767 (KC-46 / KC-767)",
+"Air refueling",
+"Almost always a refueling tanker. Japan also flies an E-767 radar version.",
+"tanker"
+],
+"K767": [
+"Military 767 (KC-46 / KC-767)",
+"Air refueling",
+"Almost always a refueling tanker. Japan also flies an E-767 radar version.",
+"tanker"
+],
+"E767": [
+"Military 767 (KC-46 / KC-767)",
+"Air refueling",
+"Almost always a refueling tanker. Japan also flies an E-767 radar version.",
+"tanker"
+],
+"TWR": [
+"Ground radio station",
+"Not a plane",
+"A ground transmitter that shows up on the tracker.",
+"ground"
+]
+},
+"cats": {
+"tanker": [
+"Air refueling tanker",
+"",
+"Gas station in the sky.",
+"tanker"
+],
+"bomber": [
+"Bomber",
+"",
+"Long-range strike plane.",
+"bomber"
+],
+"airlift": [
+"Heavy airlift",
+"",
+"Moving troops and equipment.",
+"airlift"
+],
+"tactical": [
+"Tactical airlift",
+"",
+"Smaller cargo and troop carrier.",
+"tactical"
+],
+"isr": [
+"Spy / surveillance flight",
+"",
+"Watching and listening.",
+"isr"
+],
+"c2": [
+"Nuclear command flight",
+"",
+"Part of the chain that carries nuclear orders.",
+"c2"
+],
+"fighter": [
+"Fighter jet",
+"",
+"Fighter.",
+"fighter"
+],
+"other": [
+"Military flight",
+"",
+"A military plane.",
+""
+]
+}
 }

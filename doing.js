@@ -131,7 +131,8 @@ function doing(p, planes, M, ts) {
 
   // ---- phase
   let phase = 'cruise', landB = null;
-  const ahead = bh.ahead && (vr != null && vr < -300 ? bh.ahead[1] <= 80 : alt != null && alt < 5000 && bh.ahead[1] <= 20) ? bh.ahead : null;
+  // a field only counts as 'ahead' when it's a sensible glide away for the height (about 300 ft per mile, with room to spare)
+  const ahead = bh.ahead && (alt == null || bh.ahead[1] <= Math.max(10, alt / 100)) && (vr != null && vr < -300 ? bh.ahead[1] <= 80 : alt != null && alt < 5000 && bh.ahead[1] <= 20) ? bh.ahead : null;
   if (['7700', '7600', '7500'].includes(p.sq)) phase = 'sq';
   else if (role === 'ground') phase = 'station';
   else if (ground) phase = 'ground';

@@ -80,33 +80,11 @@ function tick() {
   $('#clockCT').textContent = d.toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour12: false});
   $('#clockZ').textContent = d.toISOString().substr(11, 8) + 'Z';
   if (live) {
-    // LAST CHECK ticks live, second by second, from the moment of the last radar check
     const age = Math.max(0, Math.floor(Date.now() / 1000 - live.updated));
-    const h = Math.floor(age / 3600), m = Math.floor(age % 3600 / 60), sec = age % 60, p2 = n => String(n).padStart(2, '0');
-    $('#sweepAge').textContent = age < 10 ? 'just now' : (h ? h + 'h ' + p2(m) + 'm ' + p2(sec) + 's' : (m ? m + 'm ' + p2(sec) + 's ago' : sec + 's ago'));
-    const box = $('#sweepbox');
-    box.classList.toggle('stale', age > 60 * 60 && age <= 120 * 60);
-    box.classList.toggle('dead', age > 120 * 60);
     $('#sysline').textContent = age > 120 * 60 ? 'WATCHTOWER QUIET: NO CHECK IN 2+ HOURS' : 'WATCHTOWER ONLINE \u00B7 CHECK #' + (live.sweeps || 1);
   }
 }
 setInterval(tick, 1000); tick();
-// the little line under LAST CHECK: the real time of the check, plus a flash when a new one lands
-let lastUpdated = null, pulling = false;
-function sweepMeta(fresh) {
-  if (!live) return;
-  const at = new Date(live.updated * 1000).toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit'});
-  let sm = $('#sweepAt');
-  if (!sm) { sm = document.createElement('small'); sm.id = 'sweepAt'; $('#sweepbox').appendChild(sm); }
-  sm.textContent = 'at ' + at + ' \u00B7 check #' + (live.sweeps || 1);
-  if (fresh) { const box = $('#sweepbox'); box.classList.remove('fresh'); void box.offsetWidth; box.classList.add('fresh'); clearTimeout(sweepMeta._t); sweepMeta._t = setTimeout(() => box.classList.remove('fresh'), 4000); }
-}
-// tap LAST CHECK to look for a newer check right now
-$('#sweepbox').addEventListener('click', e => {
-  if (e.target.closest('.i') || pulling) return;
-  pulling = true; $('#sweepbox').classList.add('pulling');
-  refresh().finally(() => { pulling = false; $('#sweepbox').classList.remove('pulling'); });
-});
 // phones pause the page in the background: catch up the moment he comes back
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tick(); refresh(); } });
 window.addEventListener('pageshow', e => { if (e.persisted) { tick(); refresh(); } });
@@ -471,7 +449,6 @@ async function refresh() {
     if (c && c.settings) { applied = c; if (!dirty && !pendingSince) loadSettings(c.settings); }
     if (firstLoad && !seenIds.size) { alerts.forEach(x => seenIds.add(x.id)); localStorage.setItem('wr_seen', JSON.stringify([...seenIds].slice(-500))); }
     setBlips(); drawStats(); drawBoard(); drawPlanes(); drawAlertPings(); drawFeed(); drawTopFinds(); threatcon(); tick();
-    sweepMeta(lastUpdated != null && live.updated !== lastUpdated); lastUpdated = live.updated;
     checkApplied();
     WR.hooks.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } });
   } catch (e) {

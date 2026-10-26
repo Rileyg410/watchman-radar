@@ -21,12 +21,12 @@
 <link rel="stylesheet" href="squawk.css?v=7">
 <link rel="stylesheet" href="intel.css?v=3">
 <link rel="stylesheet" href="spice.css?v=1">
-<link rel="stylesheet" href="verse.css?v=1">
+<link rel="stylesheet" href="verse.css?v=2">
 <script>window.WR_THEME = 'silver';</script>
 <script>
 // keep Riley's phone on the newest radar: when a new version is pushed, reload onto it by itself
 (function () {
-  var BUILD = '2026-10-26a'; window.WR_BUILD = BUILD;
+  var BUILD = '2026-10-26b'; window.WR_BUILD = BUILD;
   function check() {
     fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j || !j.build || j.build === BUILD) return;
@@ -56,7 +56,7 @@
     <div class="clock"><label>CENTRAL</label><b id="clockCT">--:--:--</b></div>
     <div class="clock"><label>ZULU</label><b id="clockZ">--:--:--</b></div>
     <div class="threat" id="threatcon"><label>THREAT LEVEL <button class="i" data-tip="threat" aria-label="What is this?">i</button></label><b>----</b></div>
-    <div class="sweep" id="sweepbox"><label>LAST CHECK <button class="i" data-tip="lastcheck" aria-label="What is this?">i</button></label><b id="sweepAge">--</b></div>
+    <div class="livebox" id="livebox" role="status" aria-label="The radar is live"><label>RADAR</label><b><i class="livedot" aria-hidden="true"></i>LIVE</b></div>
     <button class="cmdbtn sqbtn" id="openSq">&#9888; SQUAWKS</button>
     <button class="cmdbtn ixbtnh" id="openIx">&#128737; INTEL</button>
     <button class="cmdbtn" id="openCmd">&#9881; COMMAND</button>
@@ -217,7 +217,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="plain.js?v=8"></script>
 <script src="fighters.js?v=1"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 <script src="squawk.js?v=6"></script>
 <script src="doing.js?v=3"></script>
 <script src="intel.js?v=2"></script>

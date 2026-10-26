@@ -198,7 +198,7 @@ function plainText(s) {
 
 const TIPS = {
   threat: 'How stirred up the last 6 hours have been. NORMAL = nothing big. ELEVATED = an Important alert. HIGH = an Urgent alert.',
-  lastcheck: 'How long ago WATCHTOWER last looked at the skies and the news. It checks again about every 10 minutes, all by itself.',
+  lastcheck: 'How long ago WATCHTOWER last looked at the skies and the news. It ticks live, second by second, and the small line says the time of that check. A new check pops in by itself (the box flashes when it does). GitHub runs the checks on its own timer, usually every 20 to 45 minutes. Tap the box to look for a newer one right now. It turns orange after an hour with no check, and red after two.',
   scope: 'Jackson is the dot in the middle. The farther out a blip is, the farther away the plane is. The whole world fits inside the circle.',
   board: 'Green light = calm. Orange = an Important alert there today. Red = an Urgent alert there today. A \u25B2 means more than double the usual.',
   map: 'Every military plane sharing its location right now. Tap a plane to see what it is. Tap the colored buttons to hide or show a kind of plane.',

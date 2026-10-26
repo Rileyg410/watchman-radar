@@ -107,24 +107,26 @@ function project(lat, lon) {
 function setBlips() {
   blips = (live ? live.planes : []).map(p => Object.assign(project(p.lat, p.lon), {cat: p.cat, f: p.nat && p.nat !== 'US', glow: 0}));
 }
+const SILVER = window.WR_THEME === 'silver', SC = SILVER ? '226,233,241' : '57,255,143', ACC = SILVER ? '#e8eef5' : '#39ff8f';
 function drawScope() {
   const W = cv.width, H = cv.height, r = W / 2 - 4, c = W / 2;
   if (!W) { requestAnimationFrame(drawScope); return; }
-  cx.fillStyle = 'rgba(1,10,5,0.28)';
+  // Silver theme: the scope is see-through so the satellite map shows behind it
+  if (SILVER) { cx.clearRect(0, 0, W, H); cx.fillStyle = 'rgba(6,8,11,0.16)'; } else cx.fillStyle = 'rgba(1,10,5,0.28)';
   cx.beginPath(); cx.arc(c, c, r, 0, 2 * Math.PI); cx.fill();
-  cx.strokeStyle = 'rgba(57,255,143,0.35)'; cx.lineWidth = 1;
+  cx.strokeStyle = `rgba(${SC},0.42)`; cx.lineWidth = 1;
   for (let i = 1; i <= 4; i++) { cx.beginPath(); cx.arc(c, c, r * i / 4, 0, 2 * Math.PI); cx.stroke(); }
   cx.beginPath(); cx.moveTo(c - r, c); cx.lineTo(c + r, c); cx.moveTo(c, c - r); cx.lineTo(c, c + r); cx.stroke();
-  cx.save(); cx.strokeStyle = 'rgba(57,255,143,0.15)';
+  cx.save(); cx.strokeStyle = `rgba(${SC},0.22)`;
   for (let a = 0; a < 360; a += 30) { const t = a * Math.PI / 180; cx.beginPath(); cx.moveTo(c + Math.sin(t) * r * .92, c - Math.cos(t) * r * .92); cx.lineTo(c + Math.sin(t) * r, c - Math.cos(t) * r); cx.stroke(); }
   cx.restore();
   // sweep wedge
   const g = cx.createConicGradient ? cx.createConicGradient(ang - Math.PI / 2 - 0.9, c, c) : null;
   if (g) {
-    g.addColorStop(0, 'rgba(57,255,143,0)'); g.addColorStop(0.14, 'rgba(57,255,143,0.35)'); g.addColorStop(0.1433, 'rgba(57,255,143,0)'); g.addColorStop(1, 'rgba(57,255,143,0)');
+    g.addColorStop(0, `rgba(${SC},0)`); g.addColorStop(0.14, `rgba(${SC},0.35)`); g.addColorStop(0.1433, `rgba(${SC},0)`); g.addColorStop(1, `rgba(${SC},0)`);
     cx.fillStyle = g; cx.beginPath(); cx.moveTo(c, c); cx.arc(c, c, r, ang - Math.PI / 2 - 0.9, ang - Math.PI / 2); cx.closePath(); cx.fill();
   }
-  cx.strokeStyle = 'rgba(120,255,180,0.9)'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(c, c); cx.lineTo(c + Math.sin(ang) * r, c - Math.cos(ang) * r); cx.stroke();
+  cx.strokeStyle = SILVER ? 'rgba(248,250,253,0.95)' : 'rgba(120,255,180,0.9)'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(c, c); cx.lineTo(c + Math.sin(ang) * r, c - Math.cos(ang) * r); cx.stroke();
   for (const b of blips) {
     let d = ang - b.az; d = ((d % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
     if (d < 0.06) b.glow = 1;
@@ -137,7 +139,7 @@ function drawScope() {
     cx.beginPath(); cx.arc(c + b.x * r, c + b.y * r, (b.cat === 'bomber' || b.cat === 'tanker' || b.f) ? 3.5 : 2.2, 0, 2 * Math.PI); cx.fill();
     cx.shadowBlur = 0; cx.globalAlpha = 1;
   }
-  cx.fillStyle = '#39ff8f'; cx.beginPath(); cx.arc(c, c, 3, 0, 2 * Math.PI); cx.fill();
+  cx.fillStyle = ACC; cx.beginPath(); cx.arc(c, c, 3, 0, 2 * Math.PI); cx.fill();
   ang = (ang + 0.018) % (2 * Math.PI);
   requestAnimationFrame(drawScope);
 }
@@ -188,9 +190,9 @@ map.on('popupclose', e => { if (openPop === e.popup) openPop = null; setTimeout(
 window.wrMap = map;
 const regionLayer = L.layerGroup().addTo(map), acLayer = L.layerGroup().addTo(map), alertLayer = L.layerGroup().addTo(map);
 for (const [k, v] of Object.entries(REGIONS)) {
-  L.rectangle(v[1], {color: '#39ff8f', weight: 1, opacity: .35, dashArray: '4 6', fill: true, fillOpacity: .02, interactive: false}).addTo(regionLayer);
+  L.rectangle(v[1], {color: ACC, weight: 1, opacity: .35, dashArray: '4 6', fill: true, fillOpacity: .02, interactive: false}).addTo(regionLayer);
 }
-L.circleMarker(HOME, {radius: 5, color: '#39ff8f', fillColor: '#39ff8f', fillOpacity: 1}).bindPopup('<b>HOME BASE</b>').addTo(map);
+L.circleMarker(HOME, {radius: 5, color: ACC, fillColor: ACC, fillOpacity: 1}).bindPopup('<b>HOME BASE</b>').addTo(map);
 function planeSvg(col, big) {
   const s = big ? 26 : 18;
   return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="color:${col}"><path fill="${col}" stroke="#000" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="M12 2c.6 0 1 .5 1 1.2V9l8 4.6v2l-8-2.3v4.9l2.4 1.7V21L12 20l-3.4 1v-1.1L11 18.2v-4.9L3 15.6v-2L11 9V3.2C11 2.5 11.4 2 12 2z"/></svg>`;
@@ -206,9 +208,11 @@ function drawPlanes() {
     const col = (CATS[p.cat] || CATS.other).c, big = ['bomber', 'tanker', 'c2'].includes(p.cat), f = p.nat && p.nat !== 'US';
     // Fighter jets get their own swept-wing fighter icon
     const fi = (p.cat === 'fighter' && window.WRF) ? WRF.info(p) : null;
-    const s = big ? 26 : fi ? 22 : 18;
+    // round two: each type gets its own shape (spice.js)
+    const wi = window.WRI ? WRI.icon(p, f) : null;
+    const s = wi ? wi.size : big ? 26 : fi ? 22 : 18;
     const icon = L.divIcon({className: 'ac' + (f ? ' foreign' : '') + (fi ? ' fj' : ''), iconSize: [s, s], iconAnchor: [s / 2, s / 2],
-      html: `<div style="transform:rotate(${p.trk || 0}deg)">${fi ? WRF.svg(f ? '#ff3b3b' : col) : planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
+      html: `<div style="transform:rotate(${p.trk || 0}deg)">${wi ? wi.html : fi ? WRF.svg(f ? '#ff3b3b' : col) : planeSvg(f ? '#ff3b3b' : col, big)}</div>`});
     const nm = fi ? fi.name : ((window.TYPE_NAMES && TYPE_NAMES[p.t]) || p.t || 'Unknown type');
     const tk = fi ? WRF.nearTanker(p, live.planes) : null;
     const sq = {'7700': '\u{1F198} Signaling an emergency', '7600': '\u{1F4FB} Reporting radio trouble', '7500': '\u{1F6A8} Sent the hijack code'}[p.sq];
@@ -598,7 +602,7 @@ function trackPlane(hex, lat, lon, label) {
     map.flyTo([lat, lon], 7, {duration: 1}); setTimeout(() => trackPin && trackPin.openPopup(), 1100);
   }, 80);
 }
-const WR = window.WR = {hooks: [], DATA, getJSON, showTab, trackPlane, toast, ago, map,
+const WR = window.WR = {hooks: [], drawPlanes, DATA, getJSON, showTab, trackPlane, toast, ago, map,
   get live() { return live; }, get alerts() { return alerts; }, get lastTab() { return lastTab; }};
 
 // ---------------------------------------------------------------- go

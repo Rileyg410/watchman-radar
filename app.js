@@ -79,7 +79,6 @@ let seenIds = new Set(JSON.parse(localStorage.getItem('wr_seen') || '[]'));
 function tick() {
   const d = new Date();
   $('#clockCT').textContent = d.toLocaleTimeString('en-US', {timeZone: 'America/Chicago', hour12: false});
-  $('#clockZ').textContent = d.toISOString().substr(11, 8) + 'Z';
   if (live) {
     const age = Math.max(0, Math.floor(Date.now() / 1000 - live.updated));
     $('#sysline').textContent = age > 120 * 60 ? 'WATCHTOWER QUIET: NO CHECK IN 2+ HOURS' : 'WATCHTOWER ONLINE \u00B7 CHECK #' + (live.sweeps || 1);

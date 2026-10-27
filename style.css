@@ -174,7 +174,7 @@ input[type=text],#topicIn,input[type=time]{background:#000;border:1px solid var(
 .toast.on{opacity:1;transform:translateX(-50%)}
 .tabs{display:none}
 
-@media (max-width:1180px){.grid{grid-template-columns:300px 1fr 340px}.hud .clock:nth-child(2){display:none}}
+@media (max-width:1180px){.grid{grid-template-columns:300px 1fr 340px}}
 @media (max-width:900px){
   html,body{font-size:16px}
   .top{padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top))}

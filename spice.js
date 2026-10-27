@@ -12,7 +12,7 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 const TIPS = {
   icons: 'Each kind of plane has its own shape on the map, so you can tell them apart at a glance. A plane from another country\'s military shows in red.',
   sounds: 'When a new alert comes in while the radar is open, it plays a sound: a ping for FYI, a double beep for Important, a klaxon for Urgent, and a shofar for anything over Israel. iPhone needs one tap on the radar first before it can play sound, and the ringer switch has to be on.',
-  wclock: 'The time right now at home in Jackson, in Jerusalem, in Tehran, and Zulu (the time pilots and the military use).',
+  wclock: 'The time right now at home in Jackson, in Jerusalem and in Tehran.',
 };
 if (window.TIPS_EXTRA) Object.assign(window.TIPS_EXTRA, TIPS); else window.TIPS_EXTRA = TIPS;
 
@@ -21,7 +21,7 @@ document.body.classList.add('th-silver');
 document.body.prepend(el('div', 'satbg'));
 
 // ---------------------------------------------------------------- world clock
-const CLOCKS = [['JACKSON', 'America/Chicago', 1], ['JERUSALEM', 'Asia/Jerusalem'], ['TEHRAN', 'Asia/Tehran'], ['ZULU', 'UTC']];
+const CLOCKS = [['JACKSON', 'America/Chicago', 1], ['JERUSALEM', 'Asia/Jerusalem'], ['TEHRAN', 'Asia/Tehran']];
 const wc = el('div', 'wclock', CLOCKS.map(([n, tz, home]) => `<span class="${home ? 'home' : ''}"><i>${n}</i><b data-tz="${tz}">--:--</b></span>`).join('') +
   `<button class="sndbtn" id="sndBtn" aria-label="Alert sounds on or off"></button>`);
 $('.top').appendChild(wc);
@@ -29,8 +29,7 @@ function tickClocks() {
   const d = new Date();
   wc.querySelectorAll('b[data-tz]').forEach(b => {
     const tz = b.dataset.tz;
-    b.textContent = tz === 'UTC' ? d.toISOString().substr(11, 5).replace(':', '') + 'Z'
-      : d.toLocaleTimeString('en-US', {timeZone: tz, hour: 'numeric', minute: '2-digit'});
+    b.textContent = d.toLocaleTimeString('en-US', {timeZone: tz, hour: 'numeric', minute: '2-digit'});
   });
 }
 setInterval(tickClocks, 1000); tickClocks();

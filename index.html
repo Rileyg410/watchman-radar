@@ -22,11 +22,12 @@
 <link rel="stylesheet" href="intel.css?v=3">
 <link rel="stylesheet" href="spice.css?v=1">
 <link rel="stylesheet" href="verse.css?v=2">
+<link rel="stylesheet" href="cables.css?v=1">
 <script>window.WR_THEME = 'silver';</script>
 <script>
 // keep Riley's phone on the newest radar: when a new version is pushed, reload onto it by itself
 (function () {
-  var BUILD = '2026-10-26d'; window.WR_BUILD = BUILD;
+  var BUILD = '2026-10-26e'; window.WR_BUILD = BUILD;
   function check() {
     fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j || !j.build || j.build === BUILD) return;
@@ -83,6 +84,7 @@
   <section class="panel feedpanel" data-tab="feed">
     <div class="ptitle">&#127942; TOP FINDS <span id="tfsub">// today so far</span> <button class="i" data-tip="topfinds">i</button></div>
     <div class="topfinds" id="topfinds"><div class="tfempty">Tallying today&rsquo;s finds&hellip;</div></div>
+    <div class="cablewatch" id="cablewatch"></div>
     <div class="ptitle">ALERTS <span id="feedcount"></span> <button class="i" data-tip="feed">i</button></div>
     <div class="chips" id="tierchips"></div>
     <div class="feed" id="feed"><div class="empty">Waiting for the first check&hellip;</div></div>
@@ -216,16 +218,17 @@
 <div class="tip" id="tip" role="tooltip"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="plain.js?v=9"></script>
+<script src="plain.js?v=10"></script>
 <script src="country-data.js?v=1"></script>
 <script src="country.js?v=1"></script>
 <script src="fighters.js?v=1"></script>
-<script src="app.js?v=16"></script>
+<script src="app.js?v=17"></script>
 <script src="types.js?v=1"></script>
 <script src="squawk.js?v=7"></script>
 <script src="doing.js?v=3"></script>
 <script src="intel.js?v=2"></script>
 <script src="spice.js?v=2"></script>
 <script src="verse.js?v=1"></script>
+<script src="cables.js?v=1"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Watchman Radar: lets Riley add the radar to his home screen.
 // Always fetches the radar's own page and files fresh from GitHub (no stale copies on his phone).
-const SW_BUILD = '2026-10-26d';
+const SW_BUILD = '2026-10-26e';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil((async () => {
   await self.clients.claim();

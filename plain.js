@@ -27,9 +27,16 @@ const NEWSW = {
   'CARRIER MOVES': 'News: an aircraft carrier on the move'};
 
 // "AIRLIFT SURGE E. MED" -> "Lots of cargo planes over Israel & the Eastern Med"
+const CABLEW = {'CABLE CUT': 'Undersea cable cut', 'CABLE DAMAGED': 'Undersea cable damaged', 'CABLE SABOTAGE': 'Possible sabotage of an undersea cable',
+  'SPY SHIP NEAR CABLES': 'Spy ship near undersea cables', 'SHIP OVER CABLE': 'Ship hanging over an undersea cable', 'CABLE WATCH': 'Undersea cable news'};
+const CABLEPLACE = {'RED SEA': 'Red Sea', 'E. MED': 'Israel & the Eastern Med', 'SUEZ': 'Suez Canal', 'GULF': 'Persian Gulf', 'GULF OF FINLAND': 'Gulf of Finland',
+  'BALTIC SEA': 'Baltic Sea', 'TAIWAN': 'Taiwan', 'S. CHINA SEA': 'South China Sea', 'NORTH SEA': 'North Sea', 'ARCTIC': 'Arctic', 'UK & EUROPE': 'UK & Europe',
+  'BLACK SEA': 'Black Sea', 'W. AFRICA': 'West Africa', 'E. AFRICA': 'East Africa', 'AUSTRALIA': 'Australia', 'PACIFIC': 'Pacific', 'US': 'near the US'};
 function plainWhat(what) {
   const w = String(what || '').trim().replace(/\u2026$/, ''), U = w.toUpperCase();
   let m;
+  if ((m = U.match(/^(CABLE CUT|CABLE DAMAGED|CABLE SABOTAGE|SPY SHIP NEAR CABLES|SHIP OVER CABLE|CABLE WATCH)(?: - (.+))?$/)))
+    return CABLEW[m[1]] + (m[2] ? ` (${CABLEPLACE[m[2]] || titleCase(m[2])})` : '');
   if ((m = U.match(/^AIRLIFT SURGE (.+)$/))) return `Lots of cargo planes over ${placeOf(m[1])}`;
   if ((m = U.match(/^TANKER SURGE (.+)$/))) return `Refueling planes gathering over ${placeOf(m[1])}`;
   if ((m = U.match(/^TANKERS ACTIVE (.+)$/))) return `A few refueling planes over ${placeOf(m[1])}`;

@@ -37,6 +37,7 @@ const WATCHES = [
   ['isr', 'Spy planes'], ['breaking', 'Major breaking news'],
   ['skyking', 'Skyking & EAM bursts on HFGCS'], ['gpsjam', 'GPS jamming spikes'], ['closures', 'New sky closures (FAA)'],
   ['convergence', 'Convergence alarm (signals stacking)'],
+  ['cables', 'Undersea cable cuts & damage'], ['cableships', 'Ships hanging over undersea cables'],
 ];
 const REGIONS = {
   alaska: ['Alaska', [[51, -180], [72, -129]]],
@@ -387,8 +388,11 @@ function drawFeed() {
     let det = '';
     if (a.watch === 'recap' || a.watch === 'report' || a.watch === 'sunday') det = `<pre class="tfpre">${esc(plainText(a.body || ''))}</pre>`;
     else {
-      const pa = parseAssets(a.assets);
+      const isCab = a.watch === 'cables' || a.watch === 'cableships';
+      const pa = isCab ? {groups: [], f: {}} : parseAssets(a.assets);
       const rows = [];
+      if (isCab && a.assets) rows.push([`What it\u2019s about ${tipBtn('cables')}`, esc(a.assets)]);
+      if (isCab && a.cables && a.cables.length) links.unshift(`<a href="#" data-cable="${esc(a.cables[0])}">\uD83C\uDF0A Show the cable on the map</a>`);
       if (pa.groups.length) rows.push([a.headline ? 'What it\u2019s about' : 'What\u2019s up there', esc(assetsLine(pa.groups)) + idsBox(idsOf(pa.groups))]);
       const cline = alertCountries(a, pa);
       if (cline) rows.push([`Country ${tipBtn('country')}`, esc(cline)]);
@@ -452,6 +456,7 @@ function drawTopFinds() {
     }).join('');
   }
   if (t.airframes) html += `<div class="tfm af">\u2708\uFE0F Special planes spotted today: ${esc(plainAirframes(t.airframes))}</div>`;
+  if (window.cableTopFinds) html += window.cableTopFinds(t);
   if (recap.last && recap.last.body) {
     html += `<button class="tflast" id="tfLast">${showLastRecap ? '\u25BE' : '\u25B8'} Last night\u2019s recap \u00B7 ${esc(recap.last.date)}</button>` +
       (showLastRecap ? `<pre class="tfpre">${esc(plainText(recap.last.title + '\n' + recap.last.body))}</pre>` : '');

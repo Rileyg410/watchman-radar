@@ -25,6 +25,7 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import intel  # noqa: E402  round-two Intel brain
 import geo  # noqa: E402  where each plane is + what it has been doing (for "Probably doing")
+import cables  # noqa: E402  undersea cable watch: cut/damage news + ships hanging over cables
 from email.utils import parsedate_to_datetime
 
 try:
@@ -64,6 +65,7 @@ DEFAULT_CONFIG = {
         "nuclear": True, "missiles": True, "warships": True, "buildups": True,
         "ukraine": True, "breaking": True,
         "skyking": True, "gpsjam": True, "closures": True, "convergence": True,
+        "cables": True, "cableships": True,
     },
     "regions": {
         "alaska": True, "europe": True, "ukraine": True, "baltic": True,
@@ -1000,7 +1002,8 @@ REGION_PTS = {"easternmed": 6, "gulf": 3}
 HV_TYPES = {"R135", "U2", "RQ4", "GLHK", "Q4", "E3TF", "E3CF", "E8", "E7WW", "E737", "E6", "E4", "E4B",
             "A50", "IL20", "IL38"}
 MEDALS = ["\U0001F947", "\U0001F948", "\U0001F949", "4\uFE0F\u20E3", "5\uFE0F\u20E3"]
-FIND_KEEP = ("tier", "what", "headline", "location", "assets", "threat", "region", "lat", "lon", "link", "watch")
+FIND_KEEP = ("tier", "what", "headline", "location", "assets", "threat", "region", "lat", "lon", "link", "watch",
+             "cables")
 
 
 def recap_minutes(cfg):
@@ -1114,7 +1117,15 @@ def recap_summary(day, cfg):
         "top": [{k: f[k] for k in ("tier", "what", "headline", "location", "assets", "threat", "region", "lat",
                                      "lon", "link", "first", "last", "sweeps", "peak", "pushed", "score", "watch")
                  if f.get(k) is not None} for f in top],
+        "cables": cable_summary(fs),
     }
+
+
+def cable_summary(fs):
+    """Today's undersea cable news and ships for the 9 PM recap and Top Finds."""
+    cf = [f for f in fs if f.get("watch") in ("cables", "cableships")]
+    return [{k: f[k] for k in ("tier", "what", "headline", "location", "assets", "link", "first", "last", "pushed",
+                                "watch", "cables", "lat", "lon") if f.get(k) is not None} for f in cf[:4]]
 
 
 def short_time(ts):
@@ -1155,6 +1166,16 @@ def make_recap(s, late=False, test=False):
             extra.append(f"on scope {f['sweeps']} sweeps")
         extra.append("\u25B2 pushed" if f.get("pushed") else "logged")
         lines.append("   " + " \u00B7 ".join(extra))
+    cab = s.get("cables") or []
+    if cab:
+        lines += ["", "\U0001F30A UNDERSEA CABLES TODAY:"]
+        for f in cab[:3]:
+            hl = f.get("headline") or ""
+            lines.append(f"\u2022 {TIER_ICON[f['tier']]} {f['what'].upper()}")
+            if hl:
+                lines.append("   \U0001F4F0 " + (hl if len(hl) <= 110 else hl[:107].rstrip() + "\u2026"))
+    else:
+        lines += ["", "\U0001F30A UNDERSEA CABLES: no cable cuts, damage or ships hanging over cables today."]
     if s["airframes"]:
         lines += ["", "\u2708\uFE0F NOTABLE AIRFRAMES: " + s["airframes"]]
     lines.append("\u2014 WATCHTOWER")
@@ -1325,6 +1346,16 @@ def main():
     if planes:
         candidates += aircraft_alerts(planes, cfg, state)
     candidates += news_alerts(items, cfg, state, first_run)
+    cablewatch = None
+    try:  # undersea cables: news + Baltic live ships; must never break the regular alerts
+        t0 = time.time()
+        extra, cablewatch = cables.run(items, cfg, state, first_run, trusted, parse_feed, NOW, NOW_TS)
+        candidates += extra
+        sources["cables"] = {"ok": bool(cablewatch.get("news_ok") or cablewatch["ais"].get("ok")),
+                             "note": f"{len(extra)} cable items, ships checked {cablewatch['ais'].get('checked', 0)}"}
+        print(f"cable watch: {len(extra)} candidates in {time.time() - t0:.1f}s, ais={cablewatch['ais'].get('ok')}")
+    except Exception as e:
+        print("cable watch error:", type(e).__name__, e)
     intel_data = None
     try:  # round two Intel brain: must never break the regular alerts
         extra, intel_data = intel.run(state, cfg, planes, candidates, NOW_TS, CENTRAL, sources)
@@ -1405,7 +1436,7 @@ def main():
 
     keep = ("id", "ts", "tier", "what", "title", "body", "headline", "location", "assets", "response",
             "source", "threat", "region", "lat", "lon", "link", "more", "pushed", "held", "watch", "count",
-            "sq", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "nat", "route", "cc")
+            "sq", "hex", "cs", "type", "reg", "alt", "gs", "trk", "vr", "nat", "route", "cc", "cables", "mmsi")
     try:
         recap_entries = run_recap(state, cfg, planes, candidates, new_alerts, log)
     except Exception as e:  # the recap must never break the regular alerts
@@ -1428,6 +1459,11 @@ def main():
     log["alerts"] = ([{k: a[k] for k in keep if a.get(k) is not None} for a in recap_entries] +
                      [{k: a[k] for k in keep if k in a} for a in new_alerts] + log.get("alerts", []))[:400]
     save_json("alerts.json", log)
+    if cablewatch:
+        try:
+            save_json("cablewatch.json", cablewatch)
+        except Exception as e:
+            print("cablewatch save error:", type(e).__name__, e)
     try:
         save_squawks(new_alerts)
     except Exception as e:  # the squawk log must never break the regular alerts

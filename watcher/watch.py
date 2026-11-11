@@ -8,6 +8,7 @@ Runs on a timer (GitHub Actions cron). Each sweep:
   4. scores everything into FLASH / IMMEDIATE / ROUTINE alerts
   5. pushes the ones he wants to his ntfy topic, logs all of them
   6. writes live.json / alerts.json / config.json / state.json for the dashboard
+     (plus mideast.json, the MIDEAST NEWS tab's live Iran / Israel / region feed)
 
 Standard library only.
 """
@@ -26,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import intel  # noqa: E402  round-two Intel brain
 import geo  # noqa: E402  where each plane is + what it has been doing (for "Probably doing")
 import cables  # noqa: E402  undersea cable watch: cut/damage news + ships hanging over cables
+import mideast  # noqa: E402  MIDEAST NEWS tab: live Iran / Israel / region news desk
 from email.utils import parsedate_to_datetime
 
 try:
@@ -1356,6 +1358,11 @@ def main():
         print(f"cable watch: {len(extra)} candidates in {time.time() - t0:.1f}s, ais={cablewatch['ais'].get('ok')}")
     except Exception as e:
         print("cable watch error:", type(e).__name__, e)
+    try:  # MIDEAST NEWS tab (mideast.json): must never break the regular alerts
+        sources["mideast"] = mideast.run(http_get, load_json, save_json, NOW_TS, central_time, trusted)
+    except Exception as e:
+        print("mideast news error:", type(e).__name__, e)
+        sources["mideast"] = {"ok": False, "note": f"{type(e).__name__}"}
     intel_data = None
     try:  # round two Intel brain: must never break the regular alerts
         extra, intel_data = intel.run(state, cfg, planes, candidates, NOW_TS, CENTRAL, sources)

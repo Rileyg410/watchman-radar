@@ -18,6 +18,15 @@ UK Defence Journal, Jerusalem Post).
 
 Tiers: FLASH (urgent push), IMMEDIATE (high push), ROUTINE (logged; optional quiet push).
 
+## MIDEAST NEWS tab
+A live Iran / Israel / Middle East news desk (bottom-bar MIDEAST tab on the phone, MIDEAST button on
+the desktop header). Every sweep, `watcher/mideast.py` reads free RSS feeds (Times of Israel, Jerusalem
+Post, Iran International, Al Jazeera, Al-Monitor, BBC, The Guardian, The War Zone, JNS, Ynet, Long War
+Journal, The National, plus Reuters, AP, i24NEWS and topic searches through Google News), tags each
+story by place (Iran, Israel, Lebanon/Hezbollah, Syria, Yemen/Houthis, Gulf), flags military and
+movement headlines, removes repeats and writes the last 48 hours (up to 120 stories) to `mideast.json`
+on the `data` branch. It sends no pushes; a red dot on the tab means new military stories.
+
 ## Pushing a new version
 Bump the build string in `version.json`, in the small script at the top of `index.html` and in `sw.js`
 (all three the same). Open radars see the new build within 5 minutes (or the moment the app is reopened)

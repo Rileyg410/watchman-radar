@@ -42,6 +42,7 @@ GNEWS = [
     "(Iran OR Israel OR Hezbollah OR Houthi OR Syria OR Gaza) site:reuters.com",
     "(Iran OR Israel OR Hezbollah OR Houthi OR Syria OR Gaza) site:apnews.com",
     "site:i24news.tv",
+    "site:timesofisrael.com",  # Times of Israel turns GitHub's servers away from its own feed
     "Iran military OR IRGC OR Tehran OR \"Iranian navy\"",
     "Israel IDF OR \"Israeli strike\" OR \"Israeli military\"",
     "Hezbollah OR Lebanon Israel strike",
